@@ -18,6 +18,13 @@ Save ground groups in DCS and load them after restart or next time you play a mi
 
 <br>
 <br>
+Update v14:
+- Added: Save Sea/Naval units
+- Added : Now you can reuse group names.
+- Added : Better logging of spawning units
+
+<br>
+<br>
 
 Hotfix on v13:
 - Fixed reuse of unitid's on static objects.
