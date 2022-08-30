@@ -6,4 +6,20 @@ Save ground groups in DCS and load them after restart or next time you play a mi
 <br>
 <br>
 
+
 [Readme SPGG.pdf](https://github.com/AGluttonForPunishment/SPGG/files/9365505/Readme.SPGG.pdf)
+
+
+<br>
+<br>
+<br>
+
+**** Changelog ****
+
+<br>
+<br>
+
+Hotfix on v13:
+- Fixed reuse of unitid's on static objects.
+
+<br>
