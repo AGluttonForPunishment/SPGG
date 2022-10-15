@@ -18,7 +18,15 @@ Save Ground and Naval groups in DCS and load them after restart or next time you
 
 <br>
 <br>
-Update v14:<br>
+Update v015:<br>
+
+- Added: Reuse of Unit names for Land and Sea units.
+- Added: Saving of category for Static Objects.
+
+
+<br>
+<br>
+Update v014:<br>
 - Added: Save Sea/Naval units<br>
 - Added : Now you can reuse group names<br>
 - Added : Better logging of spawning units<br>
@@ -26,7 +34,7 @@ Update v14:<br>
 <br>
 <br>
 
-Hotfix on v13:
+Hotfix on v013:
 - Fixed reuse of unitid's on static objects.
 
 <br>
