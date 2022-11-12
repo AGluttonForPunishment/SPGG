@@ -7,7 +7,8 @@ Save Ground and Naval groups in DCS and load them after restart or next time you
 <br>
 
 
-[Readme SPGG.pdf](https://github.com/AGluttonForPunishment/SPGG/files/9365505/Readme.SPGG.pdf)
+[Readme SPGG.pdf](https://github.com/AGluttonForPunishment/SPGG/files/9994470/Readme.SPGG.pdf)
+
 
 
 <br>
@@ -15,6 +16,15 @@ Save Ground and Naval groups in DCS and load them after restart or next time you
 <br>
 
 **** Changelog ****
+
+<br>
+<br>
+Update v016:<br>
+
+- Added: Saving of CTLD Samsite table to support repair of samsites after mission/server restart.
+- FIX: Difference in code for blue and red spawn.
+
+
 
 <br>
 <br>
