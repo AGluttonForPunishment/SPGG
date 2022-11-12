@@ -21,7 +21,7 @@ Save Ground and Naval groups in DCS and load them after restart or next time you
 <br>
 Update v016:<br>
 
-- Added: Saving of CTLD Samsite table to support repair of samsites after mission/server restart.
+- Added: Saving of CTLD Samsite table to support repair of samsites after mission/server restart. Se readme how to add function: spgg.findAndAddSamSystems()
 - FIX: Difference in code for blue and red spawn.
 
 
