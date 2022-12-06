@@ -19,6 +19,17 @@ Save Ground and Naval groups in DCS and load them after restart or next time you
 
 <br>
 <br>
+Upcoming Update v017: (Not released yet)<br>
+
+- Added: Saving of CTLD FOB and logistic table to support saving of any FOB type that you have selected in CTLD. <br>
+- Added: New function to clear/empty the save file<br>
+See readme how to add function: spgg.clearSavefile()
+- Change: Now support any type of static object by type name. (Before every static object whould become a FOB)
+
+
+
+<br>
+<br>
 Update v016:<br>
 
 - Added: Saving of CTLD Samsite table to support repair of samsites after mission/server restart. <br>
