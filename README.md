@@ -7,7 +7,7 @@ Save Ground and Naval groups in DCS and load them after restart or next time you
 <br>
 
 
-[Readme SPGG.pdf](https://github.com/AGluttonForPunishment/SPGG/files/9994480/Readme.SPGG.pdf)
+
 
 
 
@@ -19,7 +19,7 @@ Save Ground and Naval groups in DCS and load them after restart or next time you
 
 <br>
 <br>
-Upcoming Update v017: (Not released yet)<br>
+Update v017:<br>
 
 - Added: Saving of CTLD FOB and logistic table to support saving of any FOB type that you have selected in CTLD. <br>
 - Added: New function to clear/empty the save file<br>
