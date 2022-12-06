@@ -27,10 +27,10 @@ Update v017:<br>
 See readme how to add function: spgg.clearSavefile()<br>
 - Change: Now support any type of static object by type name. (Before every static object whould become a FOB)<br>
 - Change: Changed name of save function and spawn functions (see readme)<br>
-<br>
+
 Old save files will not create FOB's for CTLD. (See example save file to see format of logistic/FOB saving table) 
 
-
+<br>
 <br>
 <br>
 Update v016:<br>
