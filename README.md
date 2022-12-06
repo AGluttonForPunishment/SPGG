@@ -23,8 +23,9 @@ Upcoming Update v017: (Not released yet)<br>
 
 - Added: Saving of CTLD FOB and logistic table to support saving of any FOB type that you have selected in CTLD. <br>
 - Added: New function to clear/empty the save file<br>
-See readme how to add function: spgg.clearSavefile()
-- Change: Now support any type of static object by type name. (Before every static object whould become a FOB)
+See readme how to add function: spgg.clearSavefile()<br>
+- Change: Now support any type of static object by type name. (Before every static object whould become a FOB)<br>
+- Change: Changed name of save function and spawn functions (see readme)
 
 
 
