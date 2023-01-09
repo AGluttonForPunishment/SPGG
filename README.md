@@ -7,7 +7,7 @@ Save Ground and Naval groups in DCS and load them after restart or next time you
 <br>
 
 
-[Readme SPGG.pdf](https://github.com/AGluttonForPunishment/SPGG/files/10367004/Readme.SPGG.pdf)
+
 
 
 
@@ -17,6 +17,15 @@ Save Ground and Naval groups in DCS and load them after restart or next time you
 
 **** Changelog ****
 
+
+<br>
+<br>
+Update v018:<br>
+
+- Added parameter to exclude deactivated groups: spgg.saveOnlyActiveGroups
+- Change: Renamed the parameter "_ShowEnvinfo" to "spgg.showEnvinfo"
+
+<br>
 <br>
 <br>
 Update v017:<br>
