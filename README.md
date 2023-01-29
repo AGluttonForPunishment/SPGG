@@ -19,7 +19,16 @@ Save Ground and Naval groups in DCS and load them after restart or next time you
 
 **** Changelog ****
 
+<br>
+<br>
+<br>
+Update v019:<br>
 
+- Added parameter to not use MIST: spgg.useMIST (DATA link (EPLRS) is not added to groups if this is false)
+- Change: Static objects also uses "spgg.ReuseGroupNames" and "spgg.ReuseUnitNames" if "true"
+- Fix: Some env.info message was not filterd if "spgg.showEnvinfo = false"
+
+<br>
 <br>
 <br>
 Update v018:<br>
