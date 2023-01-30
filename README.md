@@ -19,6 +19,11 @@ Save Ground and Naval groups in DCS and load them after restart or next time you
 
 **** Changelog ****
 
+Update v019 - Hotfix1:
+
+- Fixed schedule function for saving not reading the parameter "spgg.Savetime" in SPGG.lua
+
+
 <br>
 <br>
 <br>
