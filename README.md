@@ -7,9 +7,7 @@ Save Ground and Naval groups in DCS and load them after restart or next time you
 <br>
 
 
-
-[Readme SPGG.pdf](https://github.com/AGluttonForPunishment/SPGG/files/10529452/Readme.SPGG.pdf)
-
+[Readme SPGG v020.pdf](https://github.com/AGluttonForPunishment/SPGG/files/10571092/Readme.SPGG.v020.pdf)
 
 
 
@@ -18,6 +16,22 @@ Save Ground and Naval groups in DCS and load them after restart or next time you
 <br>
 
 **** Changelog ****
+<br>
+<br>
+<br>
+
+Update v020:
+
+- Added FLAG (spgginitalstart) and global script variable (spgg.initalstart) to detect if mission has loaded a save file. *1
+-   (See last trigger in Example file)
+- Added detection if MIST is used to avoid "spgg.useMIST = true" forcing the use of MIST if not loaded.
+- Updated example mission files!
+- Refurbished the readme file! Now contains troubleshooting section (95% of errors users get).
+- Changed back to the old folder name. "SPGG" for easy understanding of the folder to use. (Added examples how the folder path work in SPGG.lua)
+
+
+*1: Can be used by mission makes to avoid spawning units that should only spawn at initial mission start and not just after a restart of the server/mission.
+If upgrading from a previous version with a save file in use and populated, please add "spgg.initalstart = false" to your save file (SPGG_savefile.lua)
 
 <br>
 <br>
