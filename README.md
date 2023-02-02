@@ -23,7 +23,7 @@ Save Ground and Naval groups in DCS and load them after restart or next time you
 Update v020:
 
 - Added FLAG (spgginitalstart) and global script variable (spgg.initalstart) to detect if mission has loaded a save file. *1
--   (See last trigger in Example file)
+(See last trigger in Example .miz files)
 - Added detection if MIST is used to avoid "spgg.useMIST = true" forcing the use of MIST if not loaded.
 - Updated example mission files!
 - Refurbished the readme file! Now contains troubleshooting section (95% of errors users get).
