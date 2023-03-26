@@ -29,7 +29,8 @@ Update v020:
 - Updated example mission files!
 - Refurbished the readme file! Now contains troubleshooting section (95% of errors users get).
 - Changed back to the old folder name. "SPGG" for easy understanding of the folder to use. (Added examples how the folder path work in SPGG.lua)
-
+- Updated spelling errors in titles of the Readme. (hotfix)
+- Updated the Install section with examples. (hotfix)
 
 *1: Can be used by mission makes to avoid spawning units that should only spawn at initial mission start and not just after a restart of the server/mission.
 If upgrading from a previous version with a save file in use and populated, please add "spgg.initalstart = false" to your save file (SPGG_savefile.lua)
