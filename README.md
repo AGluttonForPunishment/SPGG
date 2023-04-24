@@ -8,7 +8,6 @@ Save Ground and Naval groups in DCS and load them after restart or next time you
 
 
 
-[Readme SPGG v020.pdf](https://github.com/AGluttonForPunishment/SPGG/files/11073065/Readme.SPGG.v020.pdf)
 
 
 
@@ -17,6 +16,17 @@ Save Ground and Naval groups in DCS and load them after restart or next time you
 <br>
 
 **** Changelog ****
+<br>
+<br>
+<br>
+
+Update v021:
+
+- Changed the script from 3 files to 1 file. (**Installation is changed, please see the installation part in the readme!**)
+- Updated example mission files with drawings and briefing text.
+- Made Backup saving optional. (Default off)
+- Added check if save file is present or not. You can now just delete the save file if you want to reset the save file.
+
 <br>
 <br>
 <br>
