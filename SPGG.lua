@@ -1,0 +1,3041 @@
+-- Simple Persistent Ground Groups (SPGG)
+-- By A Glutton For Punishment (aka Kanelbolle)
+
+env.info('-- SPGG v021 : Loading!')
+spgg = spgg or {} -- do not remove
+
+
+------------------
+-- Settings :	--
+------------------
+
+
+
+--------------------------------------------------------------------------------------------------------------
+-- DO NOT CHANGE the "spgg.defaultDrive" IF YOU DON'T WANT TO CHANGE THE DEFAULT PATH FOR THE SAVE FILE!!! 	--
+-- MOST CASES CHANGING THIS IS NOT NEEDED SINCE IT SAVES THE FILE IN THE SERVER INSTANC PROFILE PATH!!																	--
+--------------------------------------------------------------------------------------------------------------
+
+-- This parameter is used to determine where the SPGG save file is placed.
+-- "lfs.writedir()" is the same as : <your dcs profile path>\ 
+--
+-- The code “lfs.writedir()” will always get the current DCS profile your server or game is using.
+-- If you run multiple instances of DCS servers, you do not need to chagne this line! It will find the path to the servers profile!
+--
+-- Example Locations:
+-- The line below is Example: <your dcs profile path>\Missions\SPGG\
+-- spgg.defaultDrive = lfs.writedir() .. [[Missions\SPGG\]]
+--
+-- 
+--
+-- The line below is Example to point the script folder to : C:\MyScripts\DCS\SPGG\
+-- (We have here removed "lfs.writedir()" to get the direct path)
+--
+-- spgg.defaultDrive = [[C:\MyScripts\DCS\SPGG\]]
+-- 
+--
+-- The line below is : <your dcs profile path>\Scripts\
+spgg.defaultDrive = lfs.writedir() .. [[Scripts\]]
+
+-- Writing the path used above to dcs.log
+env.info('-- SPGG SAVE Dir: ' .. spgg.defaultDrive)
+
+
+-- Save filename
+spgg.saveFilename = "SPGG_savefile.lua"
+
+
+-- Backup folder name (Folder must be crated if it does not exist)
+-- Uses the spgg.defaultDrive as a starting path 
+spgg.backupSaveDirName = "SPGG-Backup-Saves\\" -- must have \\ between every folder level\sub-folder
+
+
+-- Saves backup files of your save at the "spgg.backupSaveDirName" directory!
+-- (Folder must be crated if it does not exist)
+-- Uses the spgg.defaultDrive as a starting path 
+spgg.enableBackupSaves = false
+
+
+-- Save loop in min
+spgg.Savetime = 60
+
+-- Reuse GroupNames from save file
+-- (If names exist the group will overwrite the existing unit, recommended to be false if mission is not designed for this)
+spgg.ReuseGroupNames = false
+
+-- Reuse Unit Names from save file
+-- (If names exist the unit will overwrite or not spawn, recommended to be false if mission is not designed for this)
+spgg.ReuseUnitNames = false
+
+-- If "True", only the Ground groups and Sea groups that  are active in the Mission are saved. (Static objects are not inclided in the check)
+spgg.saveOnlyActiveGroups = true
+
+
+-- If you don't want to use "MIST" you can disable it here. (The MIST version of CTLD will not work without MIST)
+-- MIST is only used for the mist.getNextGroupId() & mist.getNextUnitId() functions in the script (MIST unit Table).
+-- If this option is false, DCS will controle what ID's are used.
+-- Hardcoded groupid's and unitid's in other scripts might cause problems. (check that this is not the case)
+-- Datalink for ground units is off if this is false (the script does not know what GroupID to assigne it to)
+spgg.useMIST = true
+
+
+-- Don't show Message box in DCS. Use logg file insted. (_ShowEnvinfo)
+env.setErrorMessageBoxEnabled(false)
+
+-- For debugging
+spgg.showEnvinfo = false	
+
+-- All groups names beginning with strings in this array will be excluded from saveing.
+-- Example a group placed in the mission editor or spawned by scripts with the name "AF_TestGroup-1" will not be saved!
+_tblExcludeGroupName = {
+"AF_",
+"StandAlone_",
+"SA_Convoy_",
+"Clone_",
+"Build_",
+
+}
+
+-- All Static Objects with type names in this array will be included when saveing.
+-- See list of types here: https://github.com/mrSkortch/DCS-miscScripts/tree/master/ObjectDB
+_tblIncludeStaticObjectType = {
+"outpost",
+"house2arm",
+"WindTurbine"
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+-----------------------------------
+-- DO NOT EDIT BELOW THIS LINE!! --
+-----------------------------------
+
+
+
+-- Backup Path string
+spgg.backupPath = spgg.defaultDrive .. spgg.backupSaveDirName
+
+-- make shure the value exist!
+spgg.initalstart = true
+trigger.action.setUserFlag("spgginitalstart" , true )
+
+function spgg.filenameexist(filename)
+   local f=io.open(filename,"r")
+   if f~=nil then io.close(f) return true else return false end
+end
+
+
+
+-- Load Saved Groups data to prepare for spawning
+if spgg.filenameexist(spgg.defaultDrive .. spgg.saveFilename) then
+	local savefilepath = spgg.defaultDrive .. spgg.saveFilename
+	env.info('-- SPGG : Loading Save file : ' .. savefilepath)
+	assert(loadfile(savefilepath))()
+else
+	local savefilepath = spgg.defaultDrive .. spgg.saveFilename
+	env.info('-- SPGG : Loading Save file : NO SAVE FILE LOCATED AT: ' .. savefilepath)
+end
+
+
+-- Check if persistent mission start (Loading previus groups) or initial start of the mission
+-- This is a flag and a parameter users can use to detirmen if SPGG loads a save file or the file is empty.
+-- FLAG or parameter can example be used for the mission maker to determine if example units should only spawn if lua parameter "spgg.initalstart == true" or the flag "spgginitalstart = true"
+-- Se included .miz file for example how to do this.
+if (spgg.initalstart ~= nil) then
+
+	if (spgg.initalstart == true) then
+	
+		trigger.action.setUserFlag("spgginitalstart" , true )
+		env.info('-- SPGG : spgg.initalstart was TRUE, this is the missions first start and not a persistent save!')
+	
+	else
+	
+		trigger.action.setUserFlag("spgginitalstart" , false )
+		env.info('-- SPGG : spgg.initalstart was FALSE, this is a persisten session of the mission!')
+	
+	end -- of if (spgg.initalstart == true) then
+	
+else
+
+	-- Parameter was nil, then this is the initial start of the mission
+	spgg.initalstart = true
+	trigger.action.setUserFlag("spgginitalstart" , true )
+	env.info('-- SPGG : spgg.initalstart was nil, this is the missions first start and not a persistent save!')
+	
+end -- of if (spgg.initalstart ~= nil) then
+
+
+
+
+
+
+
+
+
+
+
+
+-----------------------------------
+-- LOAD FUNCTIONS --
+-----------------------------------
+
+
+
+
+env.info('-- SPGG - Loading Function for Loading Groups!')
+
+
+
+spgg.tblPrevSamSystems = {}
+
+local _noMistGroupCounterID = 0
+local _noMistUnitCounterID = 0
+
+
+
+
+
+-- gpUnitSize , _unitType, _unitCoord.x, _unitCoord.z, _unitHeading, _uCountry
+function spgg.spawnBlueGroundGroup()
+
+
+	--env.info("-- Running SpawnBlueGroundGroup!")
+	
+	--local _coaId = 2
+	env.info('-- SPGG - Coalition BLUE : Spawning Ground Forces')
+	
+	if (spgg ~= nil) and (spgg.bluegroups ~= nil) then	
+
+		for spwnGpIdx = 1, #spgg.bluegroups do
+
+			_noMistGroupCounterID = _noMistGroupCounterID + 1 
+			
+			local _isJtacAdd = false
+			local _ctldjtacGroupName = ""
+			local _ctldjtacUnit = ""
+			local _groupId = 0
+			
+			if (spgg.useMIST == true) and (mist ~= nil) then 
+				_groupId = mist.getNextGroupId()
+			end
+			
+			
+			local newUnitName = ""
+			local newGroupName = ""
+	
+			local _prevGroupName = spgg.bluegroups[spwnGpIdx].groupname or nil
+			local _loadGrpName = ""
+	
+			if (spgg.ReuseGroupNames == true) then
+				_loadGrpName = _prevGroupName
+			else
+			
+				if (spgg.useMIST == true) and (mist ~= nil) then 
+					_loadGrpName = "BlueAiGroundGroup".. _groupId
+				else
+					_loadGrpName = "BlueAiGroundGroupNM" .. _noMistGroupCounterID
+				end -- of if (spgg.useMIST == true) and (mist ~= nil) then
+				
+			end -- of if (spgg.ReuseGroupNames == true) then
+		
+
+			local data = {
+
+								["visible"] = false,
+                                ["tasks"] = 
+                                {
+                                }, -- end of ["tasks"]
+                                ["uncontrollable"] = false,
+                                ["task"] = "Ground Nothing",
+                                ["taskSelected"] = true,
+                                
+								["route"] =
+								{
+								
+								},
+								
+                                --["groupId"] = _groupId,
+                                ["hidden"] = false,
+                                ["units"] = 
+                                {
+                                   								
+							
+								}, -- end of ["units"]
+                            --["y"] = _uCoordZ1,
+                            --["x"] = _uCoordX1,
+                            ["name"] = _loadGrpName,
+                            ["start_time"] = 0,
+			} -- end of data
+
+			if (spgg.useMIST == true) and (mist ~= nil) then 
+		
+				data["groupId"] = _groupId
+				--env.info('-- groupId with MIST: ' .. data.groupId)
+		
+			end
+
+
+		if (spgg.showEnvinfo == true) then
+			local _Msg = spgg.bluegroups[spwnGpIdx].units[1].type
+			env.info("-- Loading Blue groups - Unit type : " .._Msg)
+		end
+
+					
+		
+					
+			for spwnUnitIdx = 1, #spgg.bluegroups[spwnGpIdx].units do
+                       
+
+				_noMistUnitCounterID = _noMistUnitCounterID + 1
+				local _unitId = 0
+				
+				if (spgg.useMIST == true) and (mist ~= nil) then
+					
+					_unitId 		= mist.getNextUnitId()
+				end
+			
+				local _uType		= spgg.bluegroups[spwnGpIdx].units[spwnUnitIdx].type or ''
+				local _uName		= spgg.bluegroups[spwnGpIdx].units[spwnUnitIdx].name or ''
+				local _uskill		= spgg.bluegroups[spwnGpIdx].units[spwnUnitIdx].skill or ''
+				local _uCoordX		= spgg.bluegroups[spwnGpIdx].units[spwnUnitIdx].x or 0
+				local _uCoordY		= spgg.bluegroups[spwnGpIdx].units[spwnUnitIdx].y or 0
+				local _uHdg			= spgg.bluegroups[spwnGpIdx].units[spwnUnitIdx].heading or 0
+				_uCountry		= spgg.bluegroups[spwnGpIdx].units[spwnUnitIdx].country or 0
+				_uPrevName		= spgg.bluegroups[spwnGpIdx].units[spwnUnitIdx].name or ''
+			
+
+				data.route = {
+			
+					["spans"] = 
+					{
+					}, -- end of ["spans"]
+					["points"] = 
+					{
+						[1] = 
+						{
+							["alt"] = 59,
+							["type"] = "Turning Point",
+							["ETA"] = 0,
+							["alt_type"] = "BARO",
+							["formation_template"] = "",
+							["y"] = _uCoordY,
+							["x"] = _uCoordX,
+							["ETA_locked"] = true,
+							["speed"] = 0,
+							["action"] = "Off Road",
+							["task"] = 
+							{
+							["id"] = "ComboTask",
+							["params"] = 
+							{
+							-- params (EPLRS) needs to know the spawning groups GroupID. Will be added only if MIST is active.
+								
+							}, -- end of ["params"]
+						}, -- end of ["task"]
+							["speed_locked"] = true,
+						}, -- end of [1]
+					}, -- end of ["points"]
+	
+				}
+
+
+				if (spgg.useMIST == true) and (mist ~= nil) then
+				
+					--Since we know the groupID, we can enable EPLRS (datalink) for the group
+					data.route.points[1].params = {
+					
+						["tasks"] = 
+								{
+									[1] = 
+									{
+										["number"] = 1,
+										["auto"] = true,
+										["id"] = "WrappedAction",
+										["enabled"] = true,
+										["params"] = 
+										{
+											["action"] = 
+											{
+												["id"] = "EPLRS",
+												["params"] = 
+												{
+													["value"] = true,
+													["groupId"] = _groupId,
+												}, -- end of ["params"]
+											}, -- end of ["action"]
+										}, -- end of ["params"]
+									}, -- end of [1]
+						}, -- end of ["tasks"]
+							
+					
+					
+					} -- end of data.route.points[1].params = {
+		
+
+					--env.info('-- GroupID with MIST: ' .. data.route.points[1].params.tasks[1].params.action.params.groupId)
+					--env.info('-- EPLRS groupId with MIST: ' .. data.route.points[1].params.tasks[1].params.action.id )
+				
+				end -- of if (spgg.useMIST == true) and (mist ~= nil) then
+
+
+				newGroupName = _loadGrpName
+				--newUnitName = "BlueAiGroundUnit".. _unitId
+				
+				
+				
+				if (spgg.ReuseUnitNames == true) then
+					newUnitName = _uName
+				else
+				
+					if (spgg.useMIST == true) and (mist ~= nil) then 
+						newUnitName = "BlueAiGroundUnit".. _unitId
+					else
+						newUnitName = "BlueAiGroundUnitNM".. _noMistUnitCounterID
+						--env.info("-- Blue Unit Name:  " .. newUnitName)
+					end -- of if (spgg.useMIST == true) and (mist ~= nil) then
+					
+				end -- of if (spgg.ReuseUnitNames == true) then
+
+
+				--env.info("-- Blue Group Name:  " .. newGroupName)
+				
+				
+				data.units[spwnUnitIdx] = {
+			
+					["type"] = _uType,
+					--["unitId"] = _unitId,
+					["skill"] = _uskill,
+					["y"] = _uCoordY,
+					["x"] = _uCoordX,
+					["name"] = newUnitName,
+					["heading"] = _uHdg,
+					["playerCanDrive"] = true,
+			
+				}
+			
+			
+				--data["name"] = _loadGrpName
+				
+				if (spgg.useMIST == true) and (mist ~= nil) then
+					data.units[spwnUnitIdx]["unitId"] = _unitId
+					--env.info('-- UnitID with MIST: ' .. data.units[spwnUnitIdx].unitId)
+					
+				end -- of if (spgg.useMIST == true) and (mist ~= nil) then
+			
+				
+
+				if (ctld ~= nil) then
+					-- Borrowed from CTLD (Combat Troop and Logistics Drop) for integration of JTAC in save - See https://github.com/ciribob/DCS-CTLD 
+					if (ctld.isJTACUnitType ~= nil) and (ctld.JTAC_dropEnabled ~= nil) and (ctld.jtacGeneratedLaserCodes ~= nil) then
+				
+						if ctld.isJTACUnitType(_uType) and ctld.JTAC_dropEnabled then
+
+							_isJtacAdd = true
+							_ctldjtacGroupName = _loadGrpName
+							_ctldjtacUnitName =	newUnitName
+						
+						end -- of if ctld.isJTACUnitType(_uType) and ctld.JTAC_dropEnabled then
+			
+					end -- of if (ctld.isJTACUnitType ~= nil) and (ctld.JTAC_dropEnabled ~= nil) and (ctld.jtacGeneratedLaserCodes ~= nil) then
+
+
+			
+					if (spgg.showEnvinfo == true) then
+					
+						if (spgg.useMIST == true) and (mist ~= nil) then 
+							env.info("-- Load Blue groups Unit type : " .. _uType .. " - Index : " .. spwnUnitIdx .. " - GroupID : " .. _groupId .. " - unitID : " .. _unitId)
+						else
+							env.info("-- Load Blue groups Unit type without MIST : " .. _uType .. " - Index : " .. spwnUnitIdx .. " - GroupID : Unknown" .. " - unitID : Unknown")
+						end
+						
+					end -- of if (spgg.showEnvinfo == true) then
+
+
+
+					if (spgg.completeAASystems ~= nil)  then
+						
+						if (spgg.showEnvinfo == true) then
+							env.info("-- SPGG running spgg.completeAASystems check for :  " .. newGroupName)
+						end
+
+						for _groupName, _hawkDetails in pairs(spgg.completeAASystems) do
+				
+							if (_prevGroupName ~= nil) then
+						
+
+								local _grpName = _loadGrpName
+								local _unitName = newUnitName
+						
+								local _systemName = _hawkDetails[1].system
+
+								if (_groupName == _prevGroupName) then
+							
+						
+									spgg.tblPrevSamSystems[_groupName] = spgg.tblPrevSamSystems[_groupName] or {}
+						
+									--env.info('-- spgg.completeAASystems - Grp :' .. _groupName)
+						
+									for i = 1, #_hawkDetails do
+						
+										--env.info('_hawkDetails['.. i ..'].name : ' .. _hawkDetails[i].name .. ' - ')
+								
+										if (_hawkDetails[i].name == _uPrevName) then
+						
+											local _pointX = _hawkDetails[i].pointX
+											local _pointY = _hawkDetails[i].pointY
+											local _pointZ = _hawkDetails[i].pointZ
+						
+											if (spgg.showEnvinfo == true) then
+												env.info('-- spgg.completeAASystems - Found : Old group: ' .. _prevGroupName .. ' - New Group: ' .. _grpName .. ' - Old Unit Name: ' .. _hawkDetails[i].name .. ' - New Unit Name: ' ..  _unitName .. ' - System: ' .. _systemName)
+											end
+											
+											table.insert(spgg.tblPrevSamSystems[_groupName], { ["oldSamGroupName"] = _prevGroupName, ["newSamGroupName"] = newGroupName, ["oldUnitName"] = _hawkDetails[i].name , ["newUnitName"] = _unitName ,  ["Type"] = _uType, ["pointX"] = _pointX , ["pointY"] = _pointY ,["pointZ"] = _pointZ ,["systemName"] = _systemName })
+								
+										end	-- end of if (_hawkDetails[i].name == _uPrevName) then
+
+									end -- end of for i = 1, #_hawkDetails do
+							
+						
+								end -- end of if (spgg.bluetroops[i].name == _prevGroupName) then
+						
+							end -- end of if (_prevGroupName ~= nil) then
+					
+						end -- end of for _groupName, _hawkDetails in pairs(spgg.completeAASystems) do
+				
+					end -- end of if (spgg.completeAASystems ~= nil)  then
+
+				
+				end -- end of if (ctld ~= nil) then
+				
+				
+			
+			end -- of for spwnUnitIdx = 1, #spgg.bluegroups[spwnGpIdx].units do
+		
+		
+			-- Spawn group
+			coalition.addGroup(_uCountry, Group.Category.GROUND, data)	
+
+			
+				if (ctld ~= nil) then
+					-- Borrowed from CTLD (Combat Troop and Logistics Drop) for integration of JTAC in save - See https://github.com/ciribob/DCS-CTLD 
+					if (_isJtacAdd == true) then
+							
+						
+						local _ctldjtacUnit = Unit.getByName(_ctldjtacUnitName)
+						ctld.jtacUnits[_ctldjtacGroupName] = { name = _ctldjtacUnitName, side = _ctldjtacUnit:getCoalition(), radio = _radio }
+
+                        local _code = table.remove(ctld.jtacGeneratedLaserCodes, 1)
+                        --put to the end
+                        table.insert(ctld.jtacGeneratedLaserCodes, _code)
+
+                        ctld.JTACAutoLase(_loadGrpName, _code) --(_jtacGroupName, _laserCode, _smoke, _lock, _colour)
+						
+						if (spgg.showEnvinfo == true) then
+							env.info('-- SPGG - Coalition Blue JTAC ADDED : ' .. _loadGrpName .. ' with Laser code : ' .. _code)
+						end
+					end
+		
+
+					if (ctld.droppedTroopsRED ~= nil) and (spgg.bluetroops ~= nil) then
+			
+						for i = 1, #spgg.bluetroops do
+				
+							if (_prevGroupName ~= nil) then
+					
+								if (spgg.bluetroops[i].name == _prevGroupName) then
+						
+							
+									if findValue(ctld.droppedTroopsRED, _loadGrpName) then
+							
+							
+									else
+							
+										table.insert(ctld.droppedTroopsRED, _loadGrpName)
+								
+									end
+
+							
+								end -- end of if (spgg.bluetroops[i].name == _prevGroupName) then
+						
+							end -- end of if (_prevGroupName ~= nil) then
+					
+						end -- end of for i = 1, #spgg.bluetroops do
+				
+					end -- end of if (ctld.droppedTroopsRED ~= nil) and (spgg.bluetroops ~= nil) then
+				
+				end -- end of if (ctld ~= nil) then	
+			
+
+
+
+
+
+
+
+
+			
+			--env.info('-- Spawning Group')
+			
+		end
+									
+	end		
+
+
+end -- of function spgg.spawnBlueGroundGroup()
+
+
+
+
+
+
+-- gpUnitSize , _unitType, _unitCoord.x, _unitCoord.z, _unitHeading, _uCountry
+function spgg.spawnRedGroundGroup()
+
+
+	--env.info("-- Running SpawnRedGroundGroup!")
+	
+	--local _coaId = 1
+	env.info('-- SPGG - Coalition RED : Spawning Ground Forces')
+	
+	if (spgg ~= nil) and (spgg.redgroups ~= nil) then	
+
+		for spwnGpIdx = 1, #spgg.redgroups do
+
+			_noMistGroupCounterID = _noMistGroupCounterID + 1 
+			
+			local _isJtacAdd = false
+			local _ctldjtacGroupName = ""
+			local _ctldjtacUnit = ""
+			local _groupId = 0
+			
+			if (spgg.useMIST == true) and (mist ~= nil) then 
+				_groupId = mist.getNextGroupId()
+			end
+			
+			
+			local newUnitName = ""
+			local newGroupName = ""
+	
+			local _prevGroupName = spgg.redgroups[spwnGpIdx].groupname or nil
+			local _loadGrpName = ""
+	
+			if (spgg.ReuseGroupNames == true) then
+				_loadGrpName = _prevGroupName
+			else
+			
+				if (spgg.useMIST == true) and (mist ~= nil) then 
+					_loadGrpName = "RedAiGroundGroup".. _groupId
+				else
+					_loadGrpName = "RedAiGroundGroupNM" .. _noMistGroupCounterID
+				end -- of if (spgg.useMIST == true) and (mist ~= nil) then
+				
+			end -- of if (spgg.ReuseGroupNames == true) then
+		
+
+			local data = {
+
+								["visible"] = false,
+                                ["tasks"] = 
+                                {
+                                }, -- end of ["tasks"]
+                                ["uncontrollable"] = false,
+                                ["task"] = "Ground Nothing",
+                                ["taskSelected"] = true,
+                                
+								["route"] =
+								{
+								
+								},
+								
+                                --["groupId"] = _groupId,
+                                ["hidden"] = false,
+                                ["units"] = 
+                                {
+                                   								
+							
+								}, -- end of ["units"]
+                            --["y"] = _uCoordZ1,
+                            --["x"] = _uCoordX1,
+                            ["name"] = _loadGrpName,
+                            ["start_time"] = 0,
+			} -- end of data
+
+			if (spgg.useMIST == true) and (mist ~= nil) then 
+		
+				data["groupId"] = _groupId
+				--env.info('-- groupId with MIST: ' .. data.groupId)
+		
+			end
+
+
+		if (spgg.showEnvinfo == true) then
+			local _Msg = spgg.redgroups[spwnGpIdx].units[1].type
+			env.info("-- Loading Red groups - Unit type : " .._Msg)
+		end
+
+					
+		
+					
+			for spwnUnitIdx = 1, #spgg.redgroups[spwnGpIdx].units do
+                       
+
+				_noMistUnitCounterID = _noMistUnitCounterID + 1
+				local _unitId = 0
+				
+				if (spgg.useMIST == true) and (mist ~= nil) then
+					_unitId 		= mist.getNextUnitId()
+				end
+			
+				local _uType		= spgg.redgroups[spwnGpIdx].units[spwnUnitIdx].type or ''
+				local _uName		= spgg.redgroups[spwnGpIdx].units[spwnUnitIdx].name or ''
+				local _uskill		= spgg.redgroups[spwnGpIdx].units[spwnUnitIdx].skill or ''
+				local _uCoordX		= spgg.redgroups[spwnGpIdx].units[spwnUnitIdx].x or 0
+				local _uCoordY		= spgg.redgroups[spwnGpIdx].units[spwnUnitIdx].y or 0
+				local _uHdg			= spgg.redgroups[spwnGpIdx].units[spwnUnitIdx].heading or 0
+				_uCountry		= spgg.redgroups[spwnGpIdx].units[spwnUnitIdx].country or 0
+				_uPrevName		= spgg.redgroups[spwnGpIdx].units[spwnUnitIdx].name or ''
+			
+
+				data.route = {
+			
+					["spans"] = 
+					{
+					}, -- end of ["spans"]
+					["points"] = 
+					{
+						[1] = 
+						{
+							["alt"] = 59,
+							["type"] = "Turning Point",
+							["ETA"] = 0,
+							["alt_type"] = "BARO",
+							["formation_template"] = "",
+							["y"] = _uCoordY,
+							["x"] = _uCoordX,
+							["ETA_locked"] = true,
+							["speed"] = 0,
+							["action"] = "Off Road",
+							["task"] = 
+							{
+							["id"] = "ComboTask",
+							["params"] = 
+							{
+							-- params (EPLRS) needs to know the spawning groups GroupID. Will be added only if MIST is active.
+								
+							}, -- end of ["params"]
+						}, -- end of ["task"]
+							["speed_locked"] = true,
+						}, -- end of [1]
+					}, -- end of ["points"]
+	
+				}
+
+
+				if (spgg.useMIST == true) and (mist ~= nil) then
+				
+					--Since we know the groupID, we can enable EPLRS (datalink) for the group
+					data.route.points[1].params = {
+					
+						["tasks"] = 
+								{
+									[1] = 
+									{
+										["number"] = 1,
+										["auto"] = true,
+										["id"] = "WrappedAction",
+										["enabled"] = true,
+										["params"] = 
+										{
+											["action"] = 
+											{
+												["id"] = "EPLRS",
+												["params"] = 
+												{
+													["value"] = true,
+													["groupId"] = _groupId,
+												}, -- end of ["params"]
+											}, -- end of ["action"]
+										}, -- end of ["params"]
+									}, -- end of [1]
+						}, -- end of ["tasks"]
+							
+					
+					
+					} -- end of data.route.points[1].params = {
+		
+
+					--env.info('-- GroupID with MIST: ' .. data.route.points[1].params.tasks[1].params.action.params.groupId)
+					--env.info('-- EPLRS groupId with MIST: ' .. data.route.points[1].params.tasks[1].params.action.id )
+				
+				end -- of if (spgg.useMIST == true) and (mist ~= nil) then
+
+
+				newGroupName = _loadGrpName
+				--newUnitName = "RedAiGroundUnit".. _unitId
+				
+				
+				
+				if (spgg.ReuseUnitNames == true) then
+					newUnitName = _uName
+				else
+				
+					if (spgg.useMIST == true) and (mist ~= nil) then
+						newUnitName = "RedAiGroundUnit".. _unitId
+					else
+						newUnitName = "RedAiGroundUnitNM".. _noMistUnitCounterID
+						--env.info("-- Red Unit Name:  " .. newUnitName)
+					end -- of if (spgg.useMIST == true) and (mist ~= nil) then
+					
+				end -- of if (spgg.ReuseUnitNames == true) then
+
+
+				--env.info("-- Red Group Name:  " .. newGroupName)
+				
+				
+				data.units[spwnUnitIdx] = {
+			
+					["type"] = _uType,
+					--["unitId"] = _unitId,
+					["skill"] = _uskill,
+					["y"] = _uCoordY,
+					["x"] = _uCoordX,
+					["name"] = newUnitName,
+					["heading"] = _uHdg,
+					["playerCanDrive"] = true,
+			
+				}
+			
+			
+				--data["name"] = _loadGrpName
+				
+				if (spgg.useMIST == true) and (mist ~= nil) then
+					data.units[spwnUnitIdx]["unitId"] = _unitId
+					--env.info('-- UnitID with MIST: ' .. data.units[spwnUnitIdx].unitId)
+					
+				end -- of if (spgg.useMIST == true) and (mist ~= nil) then
+			
+				
+
+				if (ctld ~= nil) then
+					-- Borrowed from CTLD (Combat Troop and Logistics Drop) for integration of JTAC in save - See https://github.com/ciribob/DCS-CTLD 
+					if (ctld.isJTACUnitType ~= nil) and (ctld.JTAC_dropEnabled ~= nil) and (ctld.jtacGeneratedLaserCodes ~= nil) then
+				
+						if ctld.isJTACUnitType(_uType) and ctld.JTAC_dropEnabled then
+
+							_isJtacAdd = true
+							_ctldjtacGroupName = _loadGrpName
+							_ctldjtacUnitName =	newUnitName
+						
+						end -- of if ctld.isJTACUnitType(_uType) and ctld.JTAC_dropEnabled then
+			
+					end -- of if (ctld.isJTACUnitType ~= nil) and (ctld.JTAC_dropEnabled ~= nil) and (ctld.jtacGeneratedLaserCodes ~= nil) then
+
+
+			
+					if (spgg.showEnvinfo == true) then
+					
+						if (spgg.useMIST == true) and (mist ~= nil) then
+							env.info("-- Load Red groups Unit type : " .. _uType .. " - Index : " .. spwnUnitIdx .. " - GroupID : " .. _groupId .. " - unitID : " .. _unitId)
+						else
+							env.info("-- Load Red groups Unit type without MIST : " .. _uType .. " - Index : " .. spwnUnitIdx .. " - GroupID : Unknown" .. " - unitID : Unknown")
+						end
+						
+					end -- of if (spgg.showEnvinfo == true) then
+
+
+
+					if (spgg.completeAASystems ~= nil)  then
+						
+						if (spgg.showEnvinfo == true) then
+							env.info("-- SPGG running spgg.completeAASystems check for :  " .. newGroupName)
+						end
+
+						for _groupName, _hawkDetails in pairs(spgg.completeAASystems) do
+				
+							if (_prevGroupName ~= nil) then
+						
+
+								local _grpName = _loadGrpName
+								local _unitName = newUnitName
+						
+								local _systemName = _hawkDetails[1].system
+
+								if (_groupName == _prevGroupName) then
+							
+						
+									spgg.tblPrevSamSystems[_groupName] = spgg.tblPrevSamSystems[_groupName] or {}
+						
+									--env.info('-- spgg.completeAASystems - Grp :' .. _groupName)
+						
+									for i = 1, #_hawkDetails do
+						
+										--env.info('_hawkDetails['.. i ..'].name : ' .. _hawkDetails[i].name .. ' - ')
+								
+										if (_hawkDetails[i].name == _uPrevName) then
+						
+											local _pointX = _hawkDetails[i].pointX
+											local _pointY = _hawkDetails[i].pointY
+											local _pointZ = _hawkDetails[i].pointZ
+						
+											if (spgg.showEnvinfo == true) then
+												env.info('-- spgg.completeAASystems - Found : Old group: ' .. _prevGroupName .. ' - New Group: ' .. _grpName .. ' - Old Unit Name: ' .. _hawkDetails[i].name .. ' - New Unit Name: ' ..  _unitName .. ' - System: ' .. _systemName)
+											end
+											
+											table.insert(spgg.tblPrevSamSystems[_groupName], { ["oldSamGroupName"] = _prevGroupName, ["newSamGroupName"] = newGroupName, ["oldUnitName"] = _hawkDetails[i].name , ["newUnitName"] = _unitName ,  ["Type"] = _uType, ["pointX"] = _pointX , ["pointY"] = _pointY ,["pointZ"] = _pointZ ,["systemName"] = _systemName })
+								
+										end	-- end of if (_hawkDetails[i].name == _uPrevName) then
+
+									end -- end of for i = 1, #_hawkDetails do
+							
+						
+								end -- end of if (spgg.redtroops[i].name == _prevGroupName) then
+						
+							end -- end of if (_prevGroupName ~= nil) then
+					
+						end -- end of for _groupName, _hawkDetails in pairs(spgg.completeAASystems) do
+				
+					end -- end of if (spgg.completeAASystems ~= nil)  then
+
+				
+				end -- end of if (ctld ~= nil) then
+				
+				
+			
+			end -- of for spwnUnitIdx = 1, #spgg.redgroups[spwnGpIdx].units do
+		
+		
+			-- Spawn group
+			coalition.addGroup(_uCountry, Group.Category.GROUND, data)	
+
+			
+				if (ctld ~= nil) then
+					-- Borrowed from CTLD (Combat Troop and Logistics Drop) for integration of JTAC in save - See https://github.com/ciribob/DCS-CTLD 
+					if (_isJtacAdd == true) then
+							
+						
+						local _ctldjtacUnit = Unit.getByName(_ctldjtacUnitName)
+						ctld.jtacUnits[_ctldjtacGroupName] = { name = _ctldjtacUnitName, side = _ctldjtacUnit:getCoalition(), radio = _radio }
+
+                        local _code = table.remove(ctld.jtacGeneratedLaserCodes, 1)
+                        --put to the end
+                        table.insert(ctld.jtacGeneratedLaserCodes, _code)
+
+                        ctld.JTACAutoLase(_loadGrpName, _code) --(_jtacGroupName, _laserCode, _smoke, _lock, _colour)
+						
+						if (spgg.showEnvinfo == true) then
+							env.info('-- SPGG - Coalition Red JTAC ADDED : ' .. _loadGrpName .. ' with Laser code : ' .. _code)
+						end
+					end
+		
+
+					if (ctld.droppedTroopsRED ~= nil) and (spgg.redtroops ~= nil) then
+			
+						for i = 1, #spgg.redtroops do
+				
+							if (_prevGroupName ~= nil) then
+					
+								if (spgg.redtroops[i].name == _prevGroupName) then
+						
+							
+									if findValue(ctld.droppedTroopsRED, _loadGrpName) then
+							
+							
+									else
+							
+										table.insert(ctld.droppedTroopsRED, _loadGrpName)
+								
+									end
+
+							
+								end -- end of if (spgg.redtroops[i].name == _prevGroupName) then
+						
+							end -- end of if (_prevGroupName ~= nil) then
+					
+						end -- end of for i = 1, #spgg.redtroops do
+				
+					end -- end of if (ctld.droppedTroopsRED ~= nil) and (spgg.redtroops ~= nil) then
+				
+				end -- end of if (ctld ~= nil) then	
+			
+
+
+
+
+
+
+
+
+			
+			--env.info('-- Spawning Group')
+			
+		end
+									
+	end		
+
+
+end -- of function spgg.spawnRedGroundGroup()
+
+
+
+
+
+
+
+
+
+
+
+function spgg.spawnBlueStaticObject()
+
+
+	--local _coaId = 2
+	
+	
+		
+	env.info('-- SPGG - Coalition BLUE : Spawning Static Objects')
+			
+		
+
+	if (spgg ~= nil) and (spgg.bluestaticobj ~= nil) then
+
+	
+
+		for spwnSoIdx = 1, #spgg.bluestaticobj do
+
+
+			local _unitId = 0
+			local _groupId = 0
+			
+			_noMistGroupCounterID = _noMistGroupCounterID + 1 
+			_noMistUnitCounterID = _noMistUnitCounterID + 1
+			
+			
+			if (spgg.useMIST == true) and (mist ~= nil) then
+				_unitId = mist.getNextGroupId()
+				_groupId = mist.getNextGroupId()
+			end
+			
+
+			
+			local _soType		= spgg.bluestaticobj[spwnSoIdx].obj[1].type or ''
+			
+			local _soCategory		= spgg.bluestaticobj[spwnSoIdx].obj[1].category or 1
+			
+			local _soPrevName	= spgg.bluestaticobj[spwnSoIdx].obj[1].name or ''
+			local _soCoordX		= spgg.bluestaticobj[spwnSoIdx].obj[1].x or 0
+			local _soCoordY		= spgg.bluestaticobj[spwnSoIdx].obj[1].y or 0
+			local _soHdg		= spgg.bluestaticobj[spwnSoIdx].obj[1].heading or 0
+			local _uCountry		= spgg.bluestaticobj[spwnSoIdx].obj[1].country or 2
+	
+	
+	
+			local _data = {
+				
+				["category"] = _soCategory,
+				["type"] = _soType,
+				--["unitId"] = _unitId,
+				["y"] = _soCoordY,
+				["x"] = _soCoordX,
+				["canCargo"] = false,
+				["heading"] = _soHdg,
+				--["groupId"] = _groupId,
+				
+			}
+
+			if (spgg.useMIST == true) and (mist ~= nil) then
+		
+				_data["groupId"] = _groupId
+				_data["unitId"] = _unitId
+				--_data.units[1]["unitId"] = _unitId
+				
+		
+			end
+
+			if (spgg.ReuseUnitNames == true) then
+					_soNewName = _soPrevName
+			else
+				
+					if (spgg.useMIST == true) and (mist ~= nil) then
+						_soNewName = "Static Object #" .._unitId.. " Blue"
+					else
+
+						_soNewName = "Static Object NM #" .. _noMistUnitCounterID .. " Blue"
+						
+					end -- of if (spgg.useMIST == true) and (mist ~= nil) then
+					
+			end -- of if (spgg.ReuseUnitNames == true) then
+
+		
+			
+			_data["country"] = _uCountry
+			_data["name"] = _soNewName
+			
+			--_soNewName = "Static Object #" .._unitId.. " Blue"
+			--_data.units[1]["name"] = _soNewName .. '-1-1'
+			--_data.units[1]["type"] = _soType
+			--_data.units[1]["heading"] = _soHdg
+			--_data.units[1]["category"] = _soCategory
+			
+			
+			coalition.addStaticObject(_uCountry, _data)	
+			--mist.dynAddStatic(_data)
+		
+			if (spgg.showEnvinfo == true) then
+				env.info("-- Load Blue Static Object type : " .. _soType .. " - Category: " .. _soCategory .. " - Index : " .. spwnSoIdx .. " - GroupID : " .. _groupId .. " - unitID : " .. _unitId .. " - New Name : " .. _soNewName)
+			end
+		
+		
+			if (ctld ~= nil) then
+			
+				-- Check if CTLD has base building Enabled
+				if (ctld.enabledFOBBuilding ~= nil) then
+		
+					if (ctld.enabledFOBBuilding == true) then
+		
+						--table.insert(ctld.logisticUnits, _soNewName)
+
+
+
+						if (ctld.logisticUnits ~= nil) and (spgg.logisticUnits ~= nil) then
+			
+							for i = 1, #spgg.logisticUnits do
+				
+								if (_soPrevName ~= nil) then
+					
+									if (spgg.logisticUnits[i].name == _soPrevName) then
+						
+							
+										if findValue(ctld.logisticUnits, _soNewName) then
+							
+										else
+											
+											if (spgg.showEnvinfo == true) then
+												env.info("-- Load Blue Static Object type in to ctld.logisticUnits : " .. _soType .. " - Category: " .. _soCategory .. " - Index : " .. spwnSoIdx .. " - GroupID : " .. _groupId .. " - unitID : " .. _unitId)
+											end
+											table.insert(ctld.logisticUnits, _soNewName)
+								
+										end -- end of: if findValue(ctld.logisticUnits, _soNewName) then
+
+							
+									end -- end of: if (spgg.logisticUnits[i].name == _soPrevName) then
+						
+								end -- end of: if (_soPrevName ~= nil) then
+					
+							end -- end of: for i = 1, #spgg.logisticUnits do
+				
+						end -- end of: if (ctld.logisticUnits ~= nil) and (spgg.logisticUnits ~= nil) then
+
+						
+						
+						
+						
+						if (ctld.troopPickupAtFOB == true) then
+							--table.insert(ctld.builtFOBS, _soNewName)
+							
+							
+							
+							if (ctld.builtFOBS ~= nil) and (spgg.builtFOBS ~= nil) then
+			
+								for i = 1, #spgg.builtFOBS do
+				
+									if (_soPrevName ~= nil) then
+					
+										if (spgg.builtFOBS[i].name == _soPrevName) then
+						
+							
+											if findValue(ctld.builtFOBS, _soNewName) then
+							
+											else
+							
+												if (spgg.showEnvinfo == true) then
+													env.info("-- Load Blue Static Object type in to ctld.builtFOBS : " .. _soType .. " - Category: " .. _soCategory .. " - Index : " .. spwnSoIdx .. " - GroupID : " .. _groupId .. " - unitID : " .. _unitId)
+												end
+												table.insert(ctld.builtFOBS, _soNewName)
+								
+											end -- end of: if findValue(ctld.builtFOBS, _soNewName) then
+
+							
+										end -- end of: if (spgg.builtFOBS[i].name == _soPrevName) then
+						
+									end -- end of: if (_soPrevName ~= nil) then
+					
+								end -- end of: for i = 1, #spgg.builtFOBS do
+				
+							end -- end of: if (ctld.builtFOBS ~= nil) and (spgg.builtFOBS ~= nil) then
+							
+							
+							
+							
+							
+						end -- end of: if (ctld.troopPickupAtFOB == true) then
+		
+					end -- end of: if (ctld.enabledFOBBuilding == true) then
+		
+				end -- end of: if (ctld.enabledFOBBuilding ~= nil) then
+				
+				
+				
+			end -- end of if (ctld ~= nil) then
+			
+			
+	
+		end  -- end of for spwnSoIdx = 1, #spgg.bluestaticobj do
+
+	end -- of if (spgg ~= nil) and (spgg.bluestaticobj ~= nil) then
+	
+end -- of function spgg.spawnBlueStaticObject()
+
+
+
+
+
+
+
+function spgg.spawnRedStaticObject()
+
+
+	--local _coaId = 2
+	
+	
+		
+	env.info('-- SPGG - Coalition RED : Spawning Static Objects')
+			
+		
+
+	if (spgg ~= nil) and (spgg.redstaticobj ~= nil) then
+
+	
+
+		for spwnSoIdx = 1, #spgg.redstaticobj do
+
+
+			local _unitId = 0
+			local _groupId = 0
+			
+			_noMistGroupCounterID = _noMistGroupCounterID + 1 
+			_noMistUnitCounterID = _noMistUnitCounterID + 1
+			
+			
+			if (spgg.useMIST == true) and (mist ~= nil) then
+				_unitId = mist.getNextGroupId()
+				_groupId = mist.getNextGroupId()
+			end
+			
+
+			
+			local _soType		= spgg.redstaticobj[spwnSoIdx].obj[1].type or ''
+			
+			local _soCategory		= spgg.redstaticobj[spwnSoIdx].obj[1].category or 1
+			
+			local _soPrevName	= spgg.redstaticobj[spwnSoIdx].obj[1].name or ''
+			local _soCoordX		= spgg.redstaticobj[spwnSoIdx].obj[1].x or 0
+			local _soCoordY		= spgg.redstaticobj[spwnSoIdx].obj[1].y or 0
+			local _soHdg		= spgg.redstaticobj[spwnSoIdx].obj[1].heading or 0
+			local _uCountry		= spgg.redstaticobj[spwnSoIdx].obj[1].country or 2
+	
+	
+	
+			local _data = {
+				
+				["category"] = _soCategory,
+				["type"] = _soType,
+				--["unitId"] = _unitId,
+				["y"] = _soCoordY,
+				["x"] = _soCoordX,
+				["canCargo"] = false,
+				["heading"] = _soHdg,
+				--["groupId"] = _groupId,
+				
+			}
+
+			if (spgg.useMIST == true) and (mist ~= nil) then
+		
+				_data["groupId"] = _groupId
+				_data["unitId"] = _unitId
+				--_data.units[1]["unitId"] = _unitId
+				
+		
+			end
+
+			if (spgg.ReuseUnitNames == true) then
+					_soNewName = _soPrevName
+			else
+				
+					if (spgg.useMIST == true) and (mist ~= nil) then
+						_soNewName = "Static Object #" .._unitId.. " Red"
+					else
+
+						_soNewName = "Static Object NM #" .. _noMistUnitCounterID .. " Red"
+						
+					end -- of if (spgg.useMIST == true) and (mist ~= nil) then
+					
+			end -- of if (spgg.ReuseUnitNames == true) then
+
+		
+			
+			_data["country"] = _uCountry
+			_data["name"] = _soNewName
+			
+			--_soNewName = "Static Object #" .._unitId.. " Red"
+			--_data.units[1]["name"] = _soNewName .. '-1-1'
+			--_data.units[1]["type"] = _soType
+			--_data.units[1]["heading"] = _soHdg
+			--_data.units[1]["category"] = _soCategory
+			
+			
+			coalition.addStaticObject(_uCountry, _data)	
+			--mist.dynAddStatic(_data)
+		
+			if (spgg.showEnvinfo == true) then
+				env.info("-- Load Red Static Object type : " .. _soType .. " - Category: " .. _soCategory .. " - Index : " .. spwnSoIdx .. " - GroupID : " .. _groupId .. " - unitID : " .. _unitId .. " - New Name : " .. _soNewName)
+			end
+		
+		
+			if (ctld ~= nil) then
+			
+				-- Check if CTLD has base building Enabled
+				if (ctld.enabledFOBBuilding ~= nil) then
+		
+					if (ctld.enabledFOBBuilding == true) then
+		
+						--table.insert(ctld.logisticUnits, _soNewName)
+
+
+
+						if (ctld.logisticUnits ~= nil) and (spgg.logisticUnits ~= nil) then
+			
+							for i = 1, #spgg.logisticUnits do
+				
+								if (_soPrevName ~= nil) then
+					
+									if (spgg.logisticUnits[i].name == _soPrevName) then
+						
+							
+										if findValue(ctld.logisticUnits, _soNewName) then
+							
+										else
+											
+											if (spgg.showEnvinfo == true) then
+												env.info("-- Load Red Static Object type in to ctld.logisticUnits : " .. _soType .. " - Category: " .. _soCategory .. " - Index : " .. spwnSoIdx .. " - GroupID : " .. _groupId .. " - unitID : " .. _unitId)
+											end
+											table.insert(ctld.logisticUnits, _soNewName)
+								
+										end -- end of: if findValue(ctld.logisticUnits, _soNewName) then
+
+							
+									end -- end of: if (spgg.logisticUnits[i].name == _soPrevName) then
+						
+								end -- end of: if (_soPrevName ~= nil) then
+					
+							end -- end of: for i = 1, #spgg.logisticUnits do
+				
+						end -- end of: if (ctld.logisticUnits ~= nil) and (spgg.logisticUnits ~= nil) then
+
+						
+						
+						
+						
+						if (ctld.troopPickupAtFOB == true) then
+							--table.insert(ctld.builtFOBS, _soNewName)
+							
+							
+							
+							if (ctld.builtFOBS ~= nil) and (spgg.builtFOBS ~= nil) then
+			
+								for i = 1, #spgg.builtFOBS do
+				
+									if (_soPrevName ~= nil) then
+					
+										if (spgg.builtFOBS[i].name == _soPrevName) then
+						
+							
+											if findValue(ctld.builtFOBS, _soNewName) then
+							
+											else
+							
+												if (spgg.showEnvinfo == true) then
+													env.info("-- Load Red Static Object type in to ctld.builtFOBS : " .. _soType .. " - Category: " .. _soCategory .. " - Index : " .. spwnSoIdx .. " - GroupID : " .. _groupId .. " - unitID : " .. _unitId)
+												end
+												table.insert(ctld.builtFOBS, _soNewName)
+								
+											end -- end of: if findValue(ctld.builtFOBS, _soNewName) then
+
+							
+										end -- end of: if (spgg.builtFOBS[i].name == _soPrevName) then
+						
+									end -- end of: if (_soPrevName ~= nil) then
+					
+								end -- end of: for i = 1, #spgg.builtFOBS do
+				
+							end -- end of: if (ctld.builtFOBS ~= nil) and (spgg.builtFOBS ~= nil) then
+							
+							
+							
+							
+							
+						end -- end of: if (ctld.troopPickupAtFOB == true) then
+		
+					end -- end of: if (ctld.enabledFOBBuilding == true) then
+		
+				end -- end of: if (ctld.enabledFOBBuilding ~= nil) then
+				
+				
+				
+			end -- end of if (ctld ~= nil) then
+			
+			
+	
+		end  -- end of for spwnSoIdx = 1, #spgg.redstaticobj do
+
+	end -- end of if (spgg ~= nil) and (spgg.redstaticobj ~= nil) then
+	
+end -- of function spgg.spawnRedStaticObject()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+-- gpUnitSize , _unitType, _unitCoord.x, _unitCoord.z, _unitHeading, _uCountry
+function spgg.spawnBlueSeaGroup()
+
+
+	--env.info("-- Running SpawnBlueGroundGroup!")
+	
+	--local _coaId = 2
+	env.info('-- SPGG - Coalition BLUE : Spawning Sea Forces')
+	
+
+
+	
+if (spgg ~= nil) and (spgg.blueseagroups ~= nil) then	
+
+	for spwnGpIdx = 1, #spgg.blueseagroups do
+
+
+		local _unitId = 0
+		local _groupId = 0
+			
+		_noMistGroupCounterID = _noMistGroupCounterID + 1 
+
+		if (spgg.useMIST == true) and (mist ~= nil) then
+			_groupId = mist.getNextGroupId()
+		end
+
+		local _isJtacAdd = false
+		local _ctldjtacGroupName = ""
+		local _ctldjtacUnit = ""
+
+		
+		local _prevGroupName = spgg.blueseagroups[spwnGpIdx].groupname or nil
+		local _loadGrpName = ""
+	
+	
+		if (spgg.ReuseUnitNames == true) then
+					_loadGrpName = _prevGroupName
+				else
+				
+					if (spgg.useMIST == true) and (mist ~= nil) then
+						_loadGrpName = "BlueAiSeaGroup".. _groupId
+					else
+						_loadGrpName = "BlueAiSeaGroupNM".. _noMistGroupCounterID
+					end -- of if (spgg.useMIST == true) and (mist ~= nil) then
+					
+		end -- of if (spgg.ReuseUnitNames == true) then
+	
+
+		local data = {
+
+								["visible"] = false,
+                                ["tasks"] = 
+                                {
+                                }, -- end of ["tasks"]
+                                ["uncontrollable"] = false,
+                                 
+								["route"] =
+								{
+								
+								},
+								
+                                --["groupId"] = _groupId,
+                                ["hidden"] = false,
+                                ["units"] = 
+                                {
+                                   								
+							
+								}, -- end of ["units"]
+                            --["y"] = _uCoordZ1,
+                            --["x"] = _uCoordX1,
+                            ["name"] = _loadGrpName,
+                            --["start_time"] = 0,
+		} -- end of data
+
+	
+		
+					
+		for spwnUnitIdx = 1, #spgg.blueseagroups[spwnGpIdx].units do
+                       
+
+			_noMistUnitCounterID = _noMistUnitCounterID + 1
+
+			if (spgg.useMIST == true) and (mist ~= nil) then
+				_unitId = mist.getNextGroupId()
+			end
+			
+			local _uType		= spgg.blueseagroups[spwnGpIdx].units[spwnUnitIdx].type or ''
+			local _uName		= spgg.blueseagroups[spwnGpIdx].units[spwnUnitIdx].name or ''
+			local _uskill		= spgg.blueseagroups[spwnGpIdx].units[spwnUnitIdx].skill or ''
+			local _uCoordX		= spgg.blueseagroups[spwnGpIdx].units[spwnUnitIdx].x or 0
+			local _uCoordY		= spgg.blueseagroups[spwnGpIdx].units[spwnUnitIdx].y or 0
+			local _uHdg			= spgg.blueseagroups[spwnGpIdx].units[spwnUnitIdx].heading or 0
+			_uCountry			= spgg.blueseagroups[spwnGpIdx].units[spwnUnitIdx].country or 2
+			
+			
+			data.route = {
+			
+				["spans"] = 
+				{
+				}, -- end of ["spans"]
+				["points"] = 
+				{
+					[1] = 
+					{
+						["alt"] = 59,
+						["type"] = "Turning Point",
+						["ETA"] = 0,
+						["alt_type"] = "BARO",
+						["formation_template"] = "",
+						["y"] = _uCoordY,
+						["x"] = _uCoordX,
+						["ETA_locked"] = true,
+						["speed"] = 0,
+						["action"] = "Turning Point",
+						["task"] = 
+                        {
+                            ["id"] = "ComboTask",
+                            ["params"] = 
+                            {
+                                ["tasks"] = 
+                                    {
+                                    }, -- end of ["tasks"]
+                            }, -- end of ["params"]
+                        }, -- end of ["task"]
+						["speed_locked"] = true,
+					}, -- end of [1]
+				}, -- end of ["points"]
+	
+			}
+
+
+			if (spgg.ReuseUnitNames == true) then
+					newUnitName = _uName
+				else
+				
+					if (spgg.useMIST == true) and (mist ~= nil) then
+						newUnitName = "BlueAiSeaUnit".. _unitId
+					else
+						newUnitName = "BlueAiSeaUnitNM".. _noMistUnitCounterID
+						--env.info("-- Red Unit Name:  " .. newUnitName)
+					end -- of if (spgg.useMIST == true) and (mist ~= nil) then
+					
+			end -- of if (spgg.ReuseUnitNames == true) then
+
+
+			data.units[spwnUnitIdx] = {
+			
+					["type"] = _uType,
+					--["unitId"] = _unitId,
+					["skill"] = _uskill,
+					["y"] = _uCoordY,
+					["x"] = _uCoordX,
+					["name"] = newUnitName,
+					["heading"] = _uHdg,
+			
+			}
+			
+			
+			data["name"] = _loadGrpName
+
+			if (spgg.useMIST == true) and (mist ~= nil) then
+				data.units[spwnUnitIdx]["unitId"] = _unitId
+			end -- of if (spgg.useMIST == true) and (mist ~= nil) then
+
+
+
+			
+			if (spgg.showEnvinfo == true) then
+				env.info("-- Load Blue Sea unit type : " .. _uType .. " - Index : " .. spwnGpIdx .. " - GroupID : " .. _groupId .. " - unitID : " .. _unitId)
+			end
+					   
+		
+				
+		end -- end of for spwnUnitIdx = 1, #spgg.blueseagroups[spwnGpIdx].units do
+		
+		
+			coalition.addGroup(_uCountry, Group.Category.SHIP, data)	
+
+			
+					
+			
+			
+		--env.info('-- Spawning Group')
+			
+	end
+									
+				
+				
+
+
+	end -- end of if (spgg ~= nil) and (spgg.blueseagroups ~= nil) then	
+
+end -- of function spgg.spawnBlueSeaGroup()
+
+
+
+
+
+
+
+-- gpUnitSize , _unitType, _unitCoord.x, _unitCoord.z, _unitHeading, _uCountry
+function spgg.spawnRedSeaGroup()
+
+
+	--env.info("-- Running SpawnRedGroundGroup!")
+	
+	--local _coaId = 2
+	env.info('-- SPGG - Coalition RED : Spawning Sea Forces')
+	
+
+
+	
+if (spgg ~= nil) and (spgg.redseagroups ~= nil) then	
+
+	for spwnGpIdx = 1, #spgg.redseagroups do
+
+
+		local _unitId = 0
+		local _groupId = 0
+			
+		_noMistGroupCounterID = _noMistGroupCounterID + 1 
+
+		if (spgg.useMIST == true) and (mist ~= nil) then
+			_groupId = mist.getNextGroupId()
+		end
+
+		local _isJtacAdd = false
+		local _ctldjtacGroupName = ""
+		local _ctldjtacUnit = ""
+
+		
+		local _prevGroupName = spgg.redseagroups[spwnGpIdx].groupname or nil
+		local _loadGrpName = ""
+	
+	
+		if (spgg.ReuseUnitNames == true) then
+					_loadGrpName = _prevGroupName
+				else
+				
+					if (spgg.useMIST == true) and (mist ~= nil) then
+						_loadGrpName = "RedAiSeaGroup".. _groupId
+					else
+						_loadGrpName = "RedAiSeaGroupNM".. _noMistGroupCounterID
+					end -- of if (spgg.useMIST == true) and (mist ~= nil) then
+					
+		end -- of if (spgg.ReuseUnitNames == true) then
+	
+
+		local data = {
+
+								["visible"] = false,
+                                ["tasks"] = 
+                                {
+                                }, -- end of ["tasks"]
+                                ["uncontrollable"] = false,
+                                 
+								["route"] =
+								{
+								
+								},
+								
+                                --["groupId"] = _groupId,
+                                ["hidden"] = false,
+                                ["units"] = 
+                                {
+                                   								
+							
+								}, -- end of ["units"]
+                            --["y"] = _uCoordZ1,
+                            --["x"] = _uCoordX1,
+                            ["name"] = _loadGrpName,
+                            --["start_time"] = 0,
+		} -- end of data
+
+	
+		
+					
+		for spwnUnitIdx = 1, #spgg.redseagroups[spwnGpIdx].units do
+                       
+
+			_noMistUnitCounterID = _noMistUnitCounterID + 1
+
+			if (spgg.useMIST == true) and (mist ~= nil) then
+				_unitId = mist.getNextGroupId()
+			end
+			
+			local _uType		= spgg.redseagroups[spwnGpIdx].units[spwnUnitIdx].type or ''
+			local _uName		= spgg.redseagroups[spwnGpIdx].units[spwnUnitIdx].name or ''
+			local _uskill		= spgg.redseagroups[spwnGpIdx].units[spwnUnitIdx].skill or ''
+			local _uCoordX		= spgg.redseagroups[spwnGpIdx].units[spwnUnitIdx].x or 0
+			local _uCoordY		= spgg.redseagroups[spwnGpIdx].units[spwnUnitIdx].y or 0
+			local _uHdg			= spgg.redseagroups[spwnGpIdx].units[spwnUnitIdx].heading or 0
+			_uCountry			= spgg.redseagroups[spwnGpIdx].units[spwnUnitIdx].country or 2
+			
+			
+			data.route = {
+			
+				["spans"] = 
+				{
+				}, -- end of ["spans"]
+				["points"] = 
+				{
+					[1] = 
+					{
+						["alt"] = 59,
+						["type"] = "Turning Point",
+						["ETA"] = 0,
+						["alt_type"] = "BARO",
+						["formation_template"] = "",
+						["y"] = _uCoordY,
+						["x"] = _uCoordX,
+						["ETA_locked"] = true,
+						["speed"] = 0,
+						["action"] = "Turning Point",
+						["task"] = 
+                        {
+                            ["id"] = "ComboTask",
+                            ["params"] = 
+                            {
+                                ["tasks"] = 
+                                    {
+                                    }, -- end of ["tasks"]
+                            }, -- end of ["params"]
+                        }, -- end of ["task"]
+						["speed_locked"] = true,
+					}, -- end of [1]
+				}, -- end of ["points"]
+	
+			}
+
+
+			if (spgg.ReuseUnitNames == true) then
+					newUnitName = _uName
+				else
+				
+					if (spgg.useMIST == true) and (mist ~= nil) then
+						newUnitName = "RedAiSeaUnit".. _unitId
+					else
+						newUnitName = "RedAiSeaUnitNM".. _noMistUnitCounterID
+						--env.info("-- Red Unit Name:  " .. newUnitName)
+					end -- of if (spgg.useMIST == true) and (mist ~= nil) then
+					
+			end -- of if (spgg.ReuseUnitNames == true) then
+
+
+			data.units[spwnUnitIdx] = {
+			
+					["type"] = _uType,
+					--["unitId"] = _unitId,
+					["skill"] = _uskill,
+					["y"] = _uCoordY,
+					["x"] = _uCoordX,
+					["name"] = newUnitName,
+					["heading"] = _uHdg,
+			
+			}
+			
+			
+			data["name"] = _loadGrpName
+
+			if (spgg.useMIST == true) and (mist ~= nil) then
+				data.units[spwnUnitIdx]["unitId"] = _unitId
+			end -- of if (spgg.useMIST == true) and (mist ~= nil) then
+
+
+
+			
+			if (spgg.showEnvinfo == true) then
+				env.info("-- Load Red Sea unit type : " .. _uType .. " - Index : " .. spwnGpIdx .. " - GroupID : " .. _groupId .. " - unitID : " .. _unitId)
+			end
+					   
+		
+				
+		end -- end of for spwnUnitIdx = 1, #spgg.redseagroups[spwnGpIdx].units do
+		
+		
+			coalition.addGroup(_uCountry, Group.Category.SHIP, data)	
+
+			
+					
+			
+			
+		--env.info('-- Spawning Group')
+			
+	end
+									
+				
+				
+
+
+	end -- end of if (spgg ~= nil) and (spgg.redseagroups ~= nil) then	
+
+end -- of function spgg.spawnRedSeaGroup()
+
+
+
+
+
+
+
+
+
+
+function spgg.findAndAddSamSystems()
+
+env.info('-- SPGG : Running spgg.findAndAddSamSystems')
+
+-- spgg.tblPrevSamSystems[i] = { ["oldSamGroupName"] = _prevGroupName, ["newSamGroupName"] = _grpName, ["systemName"] = _systemName }
+
+	if (spgg.tblPrevSamSystems ~= nil)  then
+			
+				
+				
+				
+				for _groupName, _hawkDetails in pairs(spgg.tblPrevSamSystems) do
+				
+
+					for i = 1, #_hawkDetails do
+				
+						if (_groupName ~= nil) and (_hawkDetails ~= nil) then
+						
+						local _oldGrpName = _hawkDetails[i].oldSamGroupName
+						local _newGrpName = _hawkDetails[i].newSamGroupName
+						
+							
+							if findValue(ctld.completeAASystems, _newGrpName) then
+							
+								env.info('-- ctld.completeAASystems - Found : '.. _newGrpName)
+							
+							else
+								
+								env.info('-- ctld.completeAASystems - Did not find, adding to ctld.completeAASystems : '.. _newGrpName)
+
+								ctld.completeAASystems[_newGrpName] = spgg.LoadAASystemDetails(_oldGrpName)
+									
+								
+							end
+								
+							
+						
+						
+						
+						end -- end of if (_prevGroupName ~= nil) then
+					
+					end
+					
+					
+				end -- end of for i = 1, #spgg.bluetroops do
+				
+				
+				
+				
+				
+			end -- end of if (ctld.droppedTroopsBLUE ~= nil) and (spgg.bluetroops ~= nil) then
+
+
+
+
+
+end
+
+
+
+
+function spgg.LoadAASystemDetails(_oldSAMGrpName)
+
+	local _SAMDetails = {}
+
+	if (spgg.tblPrevSamSystems ~= nil)  then
+			
+				for _groupName, _hawkDetails in pairs(spgg.tblPrevSamSystems) do
+				
+					if (_groupName ~= nil) then
+			
+						for i = 1, #_hawkDetails do
+		
+
+						
+						
+							if (_oldSAMGrpName == _groupName) then
+								
+
+								local _type = _hawkDetails[i].Type
+								local _name = _hawkDetails[i].newUnitName
+								local _system = _hawkDetails[i].systemName
+						
+
+								
+								local _point = {
+
+									["x"] = _hawkDetails[i].pointX,
+									["y"] = _hawkDetails[i].pointY,
+									["z"] = _hawkDetails[i].pointZ,
+								}
+								
+								if (spgg.showEnvinfo == true) then
+									env.info('-- SPGG tblPrevSamSystems Adding Hawk name : '.. _hawkDetails[i].newUnitName)
+								end
+								--table.insert(_SAMDetails, { point = _point, unit = _type, name = _name, system = _system})
+								
+								--table.insert(_SAMDetails, { point = _point, unit = _type, name = _name, system = ctld.AASystemTemplate.name[_system]})
+								
+								for i = 1, #ctld.AASystemTemplate do
+							
+									if ctld.AASystemTemplate[i].name == _system then
+									
+										if (spgg.showEnvinfo == true) then
+											env.info('-- CTLD completeAASystems Temp TEST : '.. ctld.AASystemTemplate[i].name)
+										end
+										--table.insert(_SAMTestTable, { tname = _groupName, system = ctld.AASystemTemplate.name[_hDetails]})
+										--table.insert(_SAMTestTable, { tname = _groupName, system = ctld.AASystemTemplate[i] })
+										table.insert(_SAMDetails, { point = _point, unit = _type, name = _name, system = ctld.AASystemTemplate[i] })
+									end
+								end 
+								
+								
+						
+							end
+							
+							
+							
+						end
+				
+					end
+
+						
+				end
+					
+	end
+	
+	
+	return _SAMDetails
+	
+end
+
+
+
+
+
+
+
+
+
+env.info('-- SPGG - Loaded Function for Loading Groups!')
+
+
+
+
+
+
+-----------------------------------
+-- SAVE FUNCTIONS --
+-----------------------------------
+
+
+
+
+env.info('-- SPGG - Loading Function for Save!')
+
+
+
+
+
+function findIfValueInArray(whichArray, itemName)
+		for currentIndex = 1, #whichArray do
+			if string.match(itemName, '^' .. whichArray[currentIndex] .. '.*$') then
+				
+						--env.info('-- Found in '.. whichArray[currentIndex] ..' : ' .. itemName)
+				
+								--Sends true back if value exist
+				return true
+			end
+		end
+end
+
+function findValue(whichArray, itemName)
+		for currentIndex = 1, #whichArray do
+			if whichArray[currentIndex] == itemName then
+								--Sends true back if value exist
+				return true
+			end
+		end
+end
+
+
+
+
+function save_time(time)
+  local days = math.floor(time/86400)
+  local hours = math.floor(math.mod(time, 86400)/3600)
+  local minutes = math.floor(math.mod(time,3600)/60)
+  local seconds = math.floor(math.mod(time,60))
+  return string.format("%d_%02d_%02d_%02d",days,hours,minutes,seconds)
+end
+
+
+
+
+
+
+
+
+
+
+function spgg.save()
+
+	env.info('-- ')
+	env.info('-- SPGG - Running spgg.save()')
+
+	_groupBlueCount = 0
+	_groupRedCount = 0
+	_soBlueCount = 0
+	_soRedCount = 0
+	_groupBlueSeaCount = 0
+	_groupRedSeaCount = 0
+
+
+	wFile = io.open(spgg.defaultDrive .. spgg.saveFilename, 'w')
+	
+
+
+	wFile:write('spgg = spgg or {}' .. '\n')
+	
+	wFile:write('spgg.initalstart = false\n')
+	
+	wFile:write('spgg.bluegroups = spgg.bluegroups or {}' .. '\n')
+	wFile:write('spgg.redgroups = spgg.redgroups or {}' .. '\n')
+	
+	wFile:write('spgg.bluestaticobj = spgg.bluestaticobj or {}' .. '\n')
+	wFile:write('spgg.redstaticobj = spgg.redstaticobj or {}' .. '\n')
+	
+	wFile:write('spgg.blueseagroups = spgg.blueseagroups or {}' .. '\n')
+	wFile:write('spgg.redseagroups = spgg.redseagroups or {}' .. '\n')
+	
+	
+	
+	
+	if (spgg.enableBackupSaves == true) then
+	
+		--Backup save file
+		local _timesave = timer.getTime()
+		local _dhmsTimeleft = save_time(_timesave)
+		wBackupFile = io.open(spgg.backupPath .. spgg.saveFilename .. "_inGameTime_" .. _dhmsTimeleft .. '.lua', 'w')
+		
+		wBackupFile:write('spgg = spgg or {}' .. '\n')
+		wBackupFile:write('spgg.bluegroups = spgg.bluegroups or {}' .. '\n')
+		wBackupFile:write('spgg.redgroups = spgg.redgroups or {}' .. '\n')
+		wBackupFile:write('spgg.bluestaticobj = spgg.bluestaticobj or {}' .. '\n')
+		wBackupFile:write('spgg.redstaticobj = spgg.redstaticobj or {}' .. '\n')
+		wBackupFile:write('spgg.blueseagroups = spgg.blueseagroups or {}' .. '\n')
+		wBackupFile:write('spgg.redseagroups = spgg.redseagroups or {}' .. '\n')
+
+	end -- if (spgg.enableBackupSaves == true) then
+
+	-----------------------------------
+	-- Get Blue Coalition Forces	-------------------
+	-----------------------------------
+	for i, gp in pairs(coalition.getGroups(2, 2)) do
+
+		local _GpName = Group.getName(gp)
+		
+		-- Only Save Activated Groups
+		if (spgg.saveOnlyActiveGroups == true) then
+			if (Group.getByName(_GpName):getUnit(1):isActive() == false) then
+			
+				if (spgg.showEnvinfo == true) then
+					env.info('-- SPGG - OnlyActiveGroups - Excluded Blue Group : ' .. _GpName)
+				end
+				
+				_GpName = nil
+			end
+		end
+		
+		if _GpName ~= nil then
+		
+				if (Group.getByName(_GpName) and Group.getByName(_GpName):getSize() > 0) and (Group.isExist(gp) == true) then
+		
+					
+					if findIfValueInArray(_tblExcludeGroupName, _GpName) then
+					
+						-- Do nothing if it is excluded!
+						
+						if (spgg.showEnvinfo == true) then
+							env.info('-- SPGG - Excluded Blue Group: ' .. _GpName)
+						end
+						
+					else
+						
+						local _gpUnitSize = Group.getByName(_GpName):getSize()
+						
+						getGroupAndSave(2, _GpName, _gpUnitSize)
+						
+					
+					end -- if (findValue(_tblExcludeGroupName, _GpName) ~= nil) then
+		
+		
+				end
+		
+		
+		end -- if _GpName =~ nil then
+		
+		
+	end -- for i, gp in pairs(coalition.getGroups(2,2)) do
+
+
+
+
+
+
+
+	-----------------------------------
+	-- Get Red Coalition Forces	-------------------
+	-----------------------------------
+	for i, gp in pairs(coalition.getGroups(1, 2)) do
+
+		local _GpName = Group.getName(gp)
+		
+		-- Only Save Activated Groups
+		if (spgg.saveOnlyActiveGroups == true) then
+			if (Group.getByName(_GpName):getUnit(1):isActive() == false) then
+				
+				if (spgg.showEnvinfo == true) then
+					env.info('-- SPGG - OnlyActiveGroups - Excluded Red Group : ' .. _GpName)
+				end
+				
+				_GpName = nil
+			end
+		end
+		
+		
+		if _GpName ~= nil then
+		
+				if (Group.getByName(_GpName) and Group.getByName(_GpName):getSize() > 0) and (Group.isExist(gp) == true) then
+		
+		
+		
+					if findIfValueInArray(_tblExcludeGroupName, _GpName) then
+					
+						-- Do nothing if it is excluded!
+						if (spgg.showEnvinfo == true) then
+							env.info('-- SPGG - Excluded Red Group: ' .. _GpName)
+						end
+						
+					else
+						
+						local _gpUnitSize = Group.getByName(_GpName):getSize()
+						
+						getGroupAndSave(1, _GpName, _gpUnitSize)
+						
+					
+					end -- if (findValue(_tblExcludeGroupName, _GpName) ~= nil) then
+		
+		
+				end
+		
+		
+		end -- if _GpName =~ nil then
+		
+		
+	end -- for i, gp in pairs(coalition.getGroups(2,2)) do
+
+
+
+
+
+
+
+
+	-----------------------------------
+	-- Static Blue Objects	-------------------
+	-----------------------------------
+
+	
+
+	for i, so in pairs(coalition.getStaticObjects(2)) do
+
+		
+		local _SoName = StaticObject.getName(so)
+		local _SoType = so:getTypeName()
+ 
+ 
+		if _SoName ~= nil then
+		
+ 
+		
+		if (StaticObject.getByName(_SoName)) and (StaticObject.isExist(so)) then
+ 
+			--trigger.action.outText("Exsist : " .._SoName , 10)
+		
+			if ( findValue(_tblIncludeStaticObjectType, _SoType)) then
+		
+				if (spgg.showEnvinfo == true) then
+					env.info('-- SPGG - Found Blue Static Object : '.. _SoName.. ' - Type : ' .. _SoType)
+				end
+				
+		
+				if ( findIfValueInArray(_tblExcludeGroupName, _SoName)) then
+				
+					if (spgg.showEnvinfo == true) then
+						env.info('-- SPGG - Excluded Blue Static Object - On Excluded Name List: ' .. _SoName.. ' - Type : ' .. _SoType)
+					end
+					
+				else --if (_SoName == string.match(_SoName, '^Deployed FOB.*$')) then
+				
+					if (spgg.showEnvinfo == true) then
+						env.info('-- SPGG - Saving Blue Static Object: '.. _SoName .. ' - Type : ' .. _SoType)
+					end
+					
+						
+					getObjectAndSave(2, _SoName)
+					
+					
+					
+				end
+			end
+		
+		
+		
+		end
+
+		end -- if _SoName ~= nil then
+
+	end -- for i, so in pairs(coalition.getStaticObjects(1)) do
+
+
+
+	-----------------------------------
+	-- Static Red Objects	-------------------
+	-----------------------------------
+
+
+	
+	
+	for i, so in pairs(coalition.getStaticObjects(1)) do
+
+
+		local _SoName = StaticObject.getName(so)
+		local _SoType = so:getTypeName()
+
+ 
+		if _SoName ~= nil then 
+ 
+		
+		if (StaticObject.getByName(_SoName)) and (StaticObject.isExist(so)) then
+ 
+
+			
+			if ( findValue(_tblIncludeStaticObjectType, _SoType)) then
+		
+				if (spgg.showEnvinfo == true) then
+					env.info('-- SPGG - Found Red Static Object : '.. _SoName.. ' - Type : ' .. _SoType)
+				end
+				
+		
+				if ( findIfValueInArray(_tblExcludeGroupName, _SoName)) then
+				
+					if (spgg.showEnvinfo == true) then
+						env.info('-- SPGG - Excluded Red Static Object - On Excluded Name List: ' .. _SoName.. ' - Type : ' .. _SoType)
+					end
+					
+
+				else
+				
+					if (spgg.showEnvinfo == true) then
+						env.info('-- SPGG - Saving Red Static Object: '.. _SoName .. ' - Type : ' .. _SoType)
+					end
+								
+							
+					getObjectAndSave(1, _SoName)
+					
+					
+					
+				end
+			end
+		
+			
+		
+		end
+
+		end -- if _SoName ~= nil then 
+
+	end -- for i, so in pairs(coalition.getStaticObjects(1)) do
+
+
+
+
+
+	-----------------------------------
+	-- Sea Blue Groups	---------------
+	-----------------------------------
+	for i, gp in pairs(coalition.getGroups(2, 3)) do
+
+		local _GpName = Group.getName(gp)
+		
+		-- Only Save Activated Groups
+		if (spgg.saveOnlyActiveGroups == true) then
+			if (Group.getByName(_GpName):getUnit(1):isActive() == false) then
+			
+				if (spgg.showEnvinfo == true) then
+					env.info('-- SPGG - OnlyActiveGroups - Excluded Sea Blue Group : ' .. _GpName)
+				end
+				
+				_GpName = nil
+			end
+		end
+		
+		
+		if _GpName ~= nil then
+		
+				if (Group.getByName(_GpName) and Group.getByName(_GpName):getSize() > 0) and (Group.isExist(gp) == true) then
+		
+					
+					if findIfValueInArray(_tblExcludeGroupName, _GpName) then
+					
+						-- Do nothing if it is excluded!
+						
+						if (spgg.showEnvinfo == true) then
+							env.info('-- SPGG - Excluded Blue Sea Group: ' .. _GpName)
+						end
+						
+					else
+						
+						local _gpUnitSize = Group.getByName(_GpName):getSize()
+						
+						getSeaGroupAndSave(2, _GpName, _gpUnitSize)
+						
+					
+					end -- if (findValue(_tblExcludeGroupName, _GpName) ~= nil) then
+		
+		
+				end
+		
+		
+		end -- if _GpName =~ nil then
+		
+		
+	end -- for i, gp in pairs(coalition.getGroups(2,2)) do
+
+
+
+
+
+
+
+	-----------------------------------
+	-- Sea Red Groups	---------------
+	-----------------------------------
+	for i, gp in pairs(coalition.getGroups(1, 3)) do
+
+		local _GpName = Group.getName(gp)
+
+		-- Only Save Activated Groups
+		if (spgg.saveOnlyActiveGroups == true) then
+			if (Group.getByName(_GpName):getUnit(1):isActive() == false) then
+			
+				if (spgg.showEnvinfo == true) then
+					env.info('-- SPGG - OnlyActiveGroups - Excluded Sea Red Group : ' .. _GpName)
+				end
+				
+				_GpName = nil
+			end
+		end
+		
+		if _GpName ~= nil then
+		
+				if (Group.getByName(_GpName) and Group.getByName(_GpName):getSize() > 0) and (Group.isExist(gp) == true) then
+		
+		
+		
+					if findIfValueInArray(_tblExcludeGroupName, _GpName) then
+					
+						-- Do nothing if it is excluded!
+						if (spgg.showEnvinfo == true) then
+							env.info('-- SPGG - Excluded Red Sea Group: ' .. _GpName)
+						end
+						
+					else
+						
+						local _gpUnitSize = Group.getByName(_GpName):getSize()
+						
+						getSeaGroupAndSave(1, _GpName, _gpUnitSize)
+						
+					
+					end -- if (findValue(_tblExcludeGroupName, _GpName) ~= nil) then
+		
+		
+				end
+		
+		
+		end -- if _GpName =~ nil then
+		
+		
+	end -- for i, gp in pairs(coalition.getGroups(2,2)) do
+
+
+
+
+
+
+
+
+	if (ctld ~= nil) then
+		saveCtldTables()
+	end
+
+	
+
+	wFile:close()
+	wFile = nil
+	
+	
+	if (spgg.enableBackupSaves == true) then
+		wBackupFile:close()
+		wBackupFile  = nil
+	end -- if (spgg.enableBackupSaves == true) then
+	
+
+end -- end of function SPGGSave(coalitionId)
+
+
+
+
+function getObjectAndSave(coalitionId, soName)
+
+	
+		
+	if coalitionId ~= nil then
+		
+		
+		
+		_sObject = StaticObject.getByName(soName)
+		
+		local _soType = _sObject:getTypeName()
+		
+		local _soDataTable = StaticObject.getDescByName(soName) 
+		
+		local _soCategory =  _soDataTable.category
+		
+		--env.info('-- SPGG :  Type: ' .. _soType .. ' - Category: ' .. _soDataTable.category)
+		
+		local _soCoord = _sObject:getPoint()
+			
+		local _sCoalition = _sObject:getCoalition()
+		
+		_soPoss = _sObject:getPosition()
+		local _soHeading = math.atan2(_soPoss.x.z, _soPoss.x.x)
+		
+		local _country = _sObject:getCountry()
+		
+		if coalitionId == 1 then
+		
+			_soRedCount = _soRedCount +1 
+		
+			
+			
+			wFile:write('spgg.redstaticobj['.._soRedCount..'] = { ["obj"] = {} }' .. '\n')
+	
+			wFile:write('spgg.redstaticobj['.._soRedCount..'].obj[1] = { ["type"] = "' .. _soType .. '", ["category"] = "' .. _soCategory .. '", ["name"] = "' .. soName .. '", ["x"] = ' .. _soCoord.x .. ', ["y"] = ' .. _soCoord.z .. ', ["heading"] = ' .. _soHeading .. ', ["country"]= '.. _country ..', }' .. '\n')
+		
+		
+			--Backup
+			
+			if (spgg.enableBackupSaves == true) then
+				wBackupFile:write('spgg.redstaticobj['.._soRedCount..'] = { ["obj"] = {} }' .. '\n')
+				wBackupFile:write('spgg.redstaticobj['.._soRedCount..'].obj[1] = { ["type"] = "' .. _soType .. '", ["category"] = "' .. _soCategory .. '", ["name"] = "' .. soName .. '", ["x"] = ' .. _soCoord.x .. ', ["y"] = ' .. _soCoord.z .. ', ["heading"] = ' .. _soHeading .. ', ["country"]= '.. _country ..', }' .. '\n')
+			end -- if (spgg.enableBackupSaves == true) then
+		
+		elseif coalitionId == 2 then
+		
+			_soBlueCount = _soBlueCount +1
+			
+			
+			wFile:write('spgg.bluestaticobj['.._soBlueCount..'] = { ["obj"] = {} }' .. '\n')
+			
+			wFile:write('spgg.bluestaticobj['.._soBlueCount..'].obj[1] = { ["type"] = "' .. _soType .. '", ["category"] = "' .. _soCategory .. '", ["name"] = "' .. soName .. '", ["x"] = ' .. _soCoord.x .. ', ["y"] = ' .. _soCoord.z .. ', ["heading"] = ' .. _soHeading .. ', ["country"]= '.. _country ..', }' .. '\n')
+
+
+			--Backup
+			if (spgg.enableBackupSaves == true) then
+				wBackupFile:write('spgg.bluestaticobj['.._soBlueCount..'] = { ["obj"] = {} }' .. '\n')
+				wBackupFile:write('spgg.bluestaticobj['.._soBlueCount..'].obj[1] = { ["type"] = "' .. _soType .. '", ["category"] = "' .. _soCategory .. '", ["name"] = "' .. soName .. '", ["x"] = ' .. _soCoord.x .. ', ["y"] = ' .. _soCoord.z .. ', ["heading"] = ' .. _soHeading .. ', ["country"]= '.. _country ..', }' .. '\n')
+			end -- if (spgg.enableBackupSaves == true) then
+
+		
+		end
+	
+		
+	
+	
+	end
+
+
+end
+
+
+
+
+
+
+
+
+function getGroupAndSave(coalitionId, gpName, gpUnitSize)
+
+
+	if coalitionId ~= nil then
+	
+		if coalitionId == 1 then
+			
+			_groupRedCount = _groupRedCount +1 
+
+			wFile:write('spgg.redgroups['.._groupRedCount..'] = { ["groupname"] = "' ..gpName.. '", ["units"] = {} }' .. '\n')
+			
+			--backup
+			if (spgg.enableBackupSaves == true) then
+				wBackupFile:write('spgg.redgroups['.._groupRedCount..'] = { ["units"] = {} }' .. '\n')
+			end -- if (spgg.enableBackupSaves == true) then
+			
+		end -- if coalitionId == 1 then
+	
+	
+		if coalitionId == 2 then
+			
+			_groupBlueCount = _groupBlueCount +1 
+
+			wFile:write('spgg.bluegroups['.._groupBlueCount..'] = { ["groupname"] = "' ..gpName.. '", ["units"] = {} }' .. '\n')
+			
+			--Backup
+			if (spgg.enableBackupSaves == true) then
+				wBackupFile:write('spgg.bluegroups['.._groupBlueCount..'] = { ["units"] = {} }' .. '\n')
+			end -- if (spgg.enableBackupSaves == true) then
+			
+		end -- if coalitionId == 2 then
+
+
+
+
+		for uIndex = 1, gpUnitSize do
+			
+		
+		
+		
+			local _Group = Group.getByName(gpName)
+		
+			
+			local _unitName = _Group:getUnit(uIndex):getName()
+		
+			local _unit = Unit.getByName(_unitName)
+			local _unitType = _unit:getTypeName()
+			
+			local _unitCoord = _unit:getPoint()
+			
+			local _coalition = _Group:getCoalition()
+				
+					
+			_unitPoss = _unit:getPosition()
+			local _unitHeading = math.atan2(_unitPoss.x.z, _unitPoss.x.x)
+			
+			
+			local _country = _unit:getCountry()
+			
+		
+			if coalitionId == 1 then
+		
+				if (spgg.showEnvinfo == true) then
+					env.info('-- SPGG - Saving Red unit: '.. _unitName .. ' - Type: ' .. _unitType .. ' - Coordinates X: ' .. _unitCoord.x .. ' - Y: ' .. _unitCoord.y .. ' - Z: ' .. _unitCoord.z .. ' - Heading: ' .. _unitHeading .. ' - Country: '.. _country)
+				end
+		
+				wFile:write('spgg.redgroups['.._groupRedCount..'].units['..uIndex..'] = { ["type"] = "' .. _unitType .. '", ["name"] = "' .. _unitName .. '", ["skill"] = "Excellent", ["x"] = ' .. _unitCoord.x .. ', ["y"] = ' .. _unitCoord.z .. ', ["heading"] = ' .. _unitHeading .. ', ["playerCanDrive"] = true, ["country"]= '.. _country ..', }' .. '\n')
+				
+				--backup
+				if (spgg.enableBackupSaves == true) then
+					wBackupFile:write('spgg.redgroups['.._groupRedCount..'].units['..uIndex..'] = { ["type"] = "' .. _unitType .. '", ["name"] = "' .. _unitName .. '", ["skill"] = "Excellent", ["x"] = ' .. _unitCoord.x .. ', ["y"] = ' .. _unitCoord.z .. ', ["heading"] = ' .. _unitHeading .. ', ["playerCanDrive"] = true, ["country"]= '.. _country ..', }' .. '\n')
+				end -- if (spgg.enableBackupSaves == true) then
+	
+			
+			elseif coalitionId == 2 then
+		
+				if (spgg.showEnvinfo == true) then
+					env.info('-- SPGG - Saving Blue unit: '.. _unitName .. ' - Type: ' .. _unitType .. ' - Coordinates X: ' .. _unitCoord.x .. ' - Y: ' .. _unitCoord.y .. ' - Z: ' .. _unitCoord.z .. ' - Heading: ' .. _unitHeading .. ' - Country: '.. _country)
+				end
+		
+				wFile:write('spgg.bluegroups['.._groupBlueCount..'].units['..uIndex..'] = { ["type"] = "' .. _unitType .. '", ["name"] = "' .. _unitName .. '", ["skill"] = "Excellent", ["x"] = ' .. _unitCoord.x .. ', ["y"] = ' .. _unitCoord.z .. ', ["heading"] = ' .. _unitHeading .. ', ["playerCanDrive"] = true, ["country"]= '.. _country ..', }' .. '\n')
+			
+				--backup
+				if (spgg.enableBackupSaves == true) then
+					wBackupFile:write('spgg.bluegroups['.._groupBlueCount..'].units['..uIndex..'] = { ["type"] = "' .. _unitType .. '", ["name"] = "' .. _unitName .. '", ["skill"] = "Excellent", ["x"] = ' .. _unitCoord.x .. ', ["y"] = ' .. _unitCoord.z .. ', ["heading"] = ' .. _unitHeading .. ', ["playerCanDrive"] = true, ["country"]= '.. _country ..', }' .. '\n')
+				end -- if (spgg.enableBackupSaves == true) then
+				
+			else
+		
+				if (spgg.showEnvinfo == true) then
+					env.info('-- SPGG - Failed to get Group Coalition, Neutral? : '.. gpName)
+					-- No Neutral units
+				end
+		
+			end
+			
+		
+		end -- for uIndex = 1, gpUnitSize do
+
+		
+
+	end -- end of if coalitionId ~= nil then
+
+
+
+
+	
+
+end -- function getGroupAndSave(gpName, gpUnitSize)
+
+
+
+
+
+
+function getSeaGroupAndSave(coalitionId, gpName, gpUnitSize)
+
+
+	if coalitionId ~= nil then
+	
+		if coalitionId == 1 then
+			
+			_groupRedSeaCount = _groupRedSeaCount +1 
+
+			wFile:write('spgg.redseagroups['.._groupRedSeaCount..'] = { ["groupname"] = "' ..gpName.. '", ["units"] = {} }' .. '\n')
+			
+			--backup
+			if (spgg.enableBackupSaves == true) then
+				wBackupFile:write('spgg.redseagroups['.._groupRedSeaCount..'] = { ["units"] = {} }' .. '\n')
+			end -- if (spgg.enableBackupSaves == true) then
+			
+		end
+	
+	
+		if coalitionId == 2 then
+			
+			_groupBlueSeaCount = _groupBlueSeaCount +1 
+
+			wFile:write('spgg.blueseagroups['.._groupBlueSeaCount..'] = { ["groupname"] = "' ..gpName.. '", ["units"] = {} }' .. '\n')
+			
+			--Backup
+			if (spgg.enableBackupSaves == true) then
+				wBackupFile:write('spgg.blueseagroups['.._groupBlueSeaCount..'] = { ["units"] = {} }' .. '\n')
+			end -- if (spgg.enableBackupSaves == true) then
+			
+		end
+
+
+
+
+		for uIndex = 1, gpUnitSize do
+			
+		
+		
+		
+			local _Group = Group.getByName(gpName)
+		
+			
+			local _unitName = _Group:getUnit(uIndex):getName()
+		
+			local _unit = Unit.getByName(_unitName)
+			local _unitType = _unit:getTypeName()
+			
+			local _unitCoord = _unit:getPoint()
+			
+			local _coalition = _Group:getCoalition()
+				
+					
+			_unitPoss = _unit:getPosition()
+			local _unitHeading = math.atan2(_unitPoss.x.z, _unitPoss.x.x)
+			
+			
+			local _country = _unit:getCountry()
+			
+		
+			if coalitionId == 1 then
+		
+				if (spgg.showEnvinfo == true) then
+					env.info('-- SPGG - Saving Red Sea unit: '.. _unitName .. ' - Type: ' .. _unitType .. ' - Coordinates X: ' .. _unitCoord.x .. ' - Y: ' .. _unitCoord.y .. ' - Z: ' .. _unitCoord.z .. ' - Heading: ' .. _unitHeading .. ' - Country: '.. _country)
+				end
+		
+				wFile:write('spgg.redseagroups['.._groupRedSeaCount..'].units['..uIndex..'] = { ["type"] = "' .. _unitType .. '", ["name"] = "' .. _unitName .. '", ["skill"] = "Excellent", ["x"] = ' .. _unitCoord.x .. ', ["y"] = ' .. _unitCoord.z .. ', ["heading"] = ' .. _unitHeading .. ', ["playerCanDrive"] = true, ["country"]= '.. _country ..', }' .. '\n')
+				
+				--backup
+				if (spgg.enableBackupSaves == true) then
+					wBackupFile:write('spgg.redseagroups['.._groupRedSeaCount..'].units['..uIndex..'] = { ["type"] = "' .. _unitType .. '", ["name"] = "' .. _unitName .. '", ["skill"] = "Excellent", ["x"] = ' .. _unitCoord.x .. ', ["y"] = ' .. _unitCoord.z .. ', ["heading"] = ' .. _unitHeading .. ', ["playerCanDrive"] = true, ["country"]= '.. _country ..', }' .. '\n')
+				end -- if (spgg.enableBackupSaves == true) then
+	
+			
+			elseif coalitionId == 2 then
+		
+				if (spgg.showEnvinfo == true) then
+					env.info('-- SPGG - Saving Blue Sea unit: '.. _unitName .. ' - Type: ' .. _unitType .. ' - Coordinates X: ' .. _unitCoord.x .. ' - Y: ' .. _unitCoord.y .. ' - Z: ' .. _unitCoord.z .. ' - Heading: ' .. _unitHeading .. ' - Country: '.. _country)
+				end
+		
+				wFile:write('spgg.blueseagroups['.._groupBlueSeaCount..'].units['..uIndex..'] = { ["type"] = "' .. _unitType .. '", ["name"] = "' .. _unitName .. '", ["skill"] = "Excellent", ["x"] = ' .. _unitCoord.x .. ', ["y"] = ' .. _unitCoord.z .. ', ["heading"] = ' .. _unitHeading .. ', ["playerCanDrive"] = true, ["country"]= '.. _country ..', }' .. '\n')
+			
+				--backup
+				if (spgg.enableBackupSaves == true) then
+					wBackupFile:write('spgg.blueseagroups['.._groupBlueSeaCount..'].units['..uIndex..'] = { ["type"] = "' .. _unitType .. '", ["name"] = "' .. _unitName .. '", ["skill"] = "Excellent", ["x"] = ' .. _unitCoord.x .. ', ["y"] = ' .. _unitCoord.z .. ', ["heading"] = ' .. _unitHeading .. ', ["playerCanDrive"] = true, ["country"]= '.. _country ..', }' .. '\n')
+				end -- if (spgg.enableBackupSaves == true) then
+				
+			else
+		
+				if (spgg.showEnvinfo == true) then
+					env.info('-- SPGG - Failed to get Sea Group Coalition, Neutral? : '.. gpName)
+					-- No Neutral units
+				end
+		
+			end
+			
+		
+		end -- for uIndex = 1, gpUnitSize do
+
+		
+
+	end -- end of if coalitionId ~= nil then
+
+
+
+
+	
+
+end -- function getGroupAndSave(gpName, gpUnitSize)
+
+
+
+
+
+
+-- Transfere FOB table to next session
+function saveCtldTables()
+
+	if (spgg.showEnvinfo == true) then
+		nv.info('-- SPGG - Runnig saveCtldTables')
+	end
+
+
+	if (ctld ~= nil) then
+
+
+		if (ctld.JTAC_dropEnabled ~= nil) then
+
+			if (ctld.JTAC_dropEnabled == true) then
+		
+			
+				-- ctld.JTAC_LIMIT_RED
+				-- ctld.JTAC_LIMIT_BLUE
+			
+				-- ctld.droppedTroopsRED
+				-- ctld.droppedTroopsBLUE
+			
+			
+			
+				if (spgg.showEnvinfo == true) then
+					env.info('-- SPGG - Saving JTAC limit parameters - RED :'.. ctld.JTAC_LIMIT_RED .. ' - BLUE: ' .. ctld.JTAC_LIMIT_BLUE)
+				end
+			
+				if (ctld.JTAC_LIMIT_RED ~= nil) and (ctld.JTAC_LIMIT_BLUE ~= nil) then
+					wFile:write('ctld.JTAC_LIMIT_RED = '.. ctld.JTAC_LIMIT_RED .. '\n')
+					wFile:write('ctld.JTAC_LIMIT_BLUE = '.. ctld.JTAC_LIMIT_BLUE .. '\n')
+				
+					--backup
+					if (spgg.enableBackupSaves == true) then
+						wBackupFile:write('ctld.JTAC_LIMIT_RED = '.. ctld.JTAC_LIMIT_RED .. '\n')
+						wBackupFile:write('ctld.JTAC_LIMIT_BLUE = '.. ctld.JTAC_LIMIT_BLUE .. '\n')
+					end -- if (spgg.enableBackupSaves == true) then
+					
+				end
+				
+			
+			
+			end	 -- end of if (ctld.JTAC_dropEnabled == true) then
+		
+		end	-- end of if (ctld.JTAC_dropEnabled ~= nil) then
+	
+	
+		if (ctld.droppedTroopsRED ~= nil) and (ctld.droppedTroopsBLUE ~= nil) then
+
+	
+			wFile:write('spgg.redtroops = spgg.redtroops or {}' .. '\n')
+			wFile:write('spgg.bluetroops = spgg.bluetroops or {}' .. '\n')
+		
+			--backup
+			if (spgg.enableBackupSaves == true) then
+				wBackupFile:write('spgg.redtroops = spgg.redtroops or {}' .. '\n')
+				wBackupFile:write('spgg.bluetroops = spgg.bluetroops or {}' .. '\n')
+			end -- if (spgg.enableBackupSaves == true) then
+	
+	
+			for i = 1, #ctld.droppedTroopsRED do
+		
+		
+				
+				wFile:write('spgg.redtroops['..i..'] = { ["name"] = "' .. ctld.droppedTroopsRED[i]..'" }' .. '\n')
+			
+				--backup
+				if (spgg.enableBackupSaves == true) then
+					wBackupFile:write('spgg.redtroops['..i..'] = { ["name"] = "' .. ctld.droppedTroopsRED[i]..'" }' .. '\n')
+				end -- if (spgg.enableBackupSaves == true) then
+				
+			end
+		
+			for i = 1, #ctld.droppedTroopsBLUE do
+		
+		
+				wFile:write('spgg.bluetroops['..i..'] = { ["name"] = "' .. ctld.droppedTroopsBLUE[i]..'" }' .. '\n')
+			
+				--backup
+				if (spgg.enableBackupSaves == true) then
+					wBackupFile:write('spgg.bluetroops['..i..'] = { ["name"] = "' .. ctld.droppedTroopsBLUE[i]..'" }' .. '\n')
+				end -- if (spgg.enableBackupSaves == true) then
+				
+			end
+	
+	
+	
+		end -- end of if (ctld.droppedTroopsRED ~= nil) and (ctld.droppedTroopsBLUE ~= nil) then
+		
+		
+
+		
+		if (ctld.completeAASystems ~= nil) then
+		
+			spgg.SaveAASystemDetails()
+		
+		end -- end of if (ctld.completeAASystems ~= nil) then
+		
+	
+	
+		-- Save CTLD Logistic tables
+		if (ctld.enabledFOBBuilding == true) then
+		
+		
+			if (ctld.builtFOBS ~= nil) then
+			
+				wFile:write('spgg.builtFOBS = spgg.builtFOBS or {}' .. '\n')
+				
+				if (spgg.enableBackupSaves == true) then
+					wBackupFile:write('spgg.builtFOBS = spgg.builtFOBS or {}' .. '\n')
+				end -- if (spgg.enableBackupSaves == true) then
+			
+				
+				for i = 1, #ctld.builtFOBS do
+		
+					wFile:write('spgg.builtFOBS['..i..'] = { ["name"] = "' .. ctld.builtFOBS[i]..'" }' .. '\n')
+				
+					--backup
+					if (spgg.enableBackupSaves == true) then
+						wBackupFile:write('spgg.builtFOBS['..i..'] = { ["name"] = "' .. ctld.builtFOBS[i]..'" }' .. '\n')
+					end -- if (spgg.enableBackupSaves == true) then
+					
+				end -- end of: for i = 1, #ctld.builtFOBS do
+			
+			end -- end of: if (ctld.builtFOBS ~= nil) then
+			
+			
+			
+			if (ctld.logisticUnits ~= nil) then
+			
+				wFile:write('spgg.logisticUnits = spgg.logisticUnits or {}' .. '\n')
+				
+				if (spgg.enableBackupSaves == true) then
+					wBackupFile:write('spgg.logisticUnits = spgg.logisticUnits or {}' .. '\n')
+				end -- if (spgg.enableBackupSaves == true) then
+				
+				for i = 1, #ctld.logisticUnits do
+		
+					wFile:write('spgg.logisticUnits['..i..'] = { ["name"] = "' .. ctld.logisticUnits[i]..'" }' .. '\n')
+				
+					--backup
+					if (spgg.enableBackupSaves == true) then
+						wBackupFile:write('spgg.logisticUnits['..i..'] = { ["name"] = "' .. ctld.logisticUnits[i]..'" }' .. '\n')
+					end -- if (spgg.enableBackupSaves == true) then
+					
+				end -- end of: for i = 1, #ctld.logisticUnits do
+			
+			end -- end of: if (ctld.logisticUnits ~= nil) then
+			
+			
+		
+			
+		end -- end of: if (ctld.enabledFOBBuilding == true) then
+
+	
+	
+
+	end -- end of if (ctld ~= nil) then
+
+
+end
+
+
+
+function spgg.SaveAASystemDetails()
+
+	
+	wFile:write('spgg.completeAASystems = {} \n')
+	if (spgg.enableBackupSaves == true) then
+		wBackupFile:write('spgg.completeAASystems = {} \n')
+	end
+
+	for _groupName, _hawkDetails in pairs(ctld.completeAASystems) do
+
+		if (_hawkDetails ~= nil) then
+
+
+			
+			wFile:write('spgg.completeAASystems["' .. _groupName .. '"] = {} \n')
+			
+			if (spgg.enableBackupSaves == true) then
+				wBackupFile:write('spgg.completeAASystems["' .. _groupName .. '"] = {} \n')
+			end -- if (spgg.enableBackupSaves == true) then
+			
+			--spgg.completeAASystems[_groupName] = {}
+			
+			for i = 1, #_hawkDetails do
+		
+				wFile:write('table.insert(spgg.completeAASystems["'.. _groupName ..'"], {unit= "'.. _hawkDetails[i].unit ..'", name= "'.. _hawkDetails[i].name .. '", pointX= "'.. _hawkDetails[i].point.x .. '", pointY= "'.. _hawkDetails[i].point.y .. '", pointZ= "'.. _hawkDetails[i].point.z .. '", system= "'.. _hawkDetails[i].system.name ..  '" }) \n')
+					
+				
+				if (spgg.enableBackupSaves == true) then
+					wBackupFile:write('table.insert(spgg.completeAASystems["'.. _groupName ..'"], {unit= "'.. _hawkDetails[i].unit ..'", name= "'.. _hawkDetails[i].name .. '", pointX= "'.. _hawkDetails[i].point.x .. '", pointY= "'.. _hawkDetails[i].point.y .. '", pointZ= "'.. _hawkDetails[i].point.z .. '", system= "'.. _hawkDetails[i].system.name ..  '" }) \n')
+				end -- if (spgg.enableBackupSaves == true) then
+			
+			end
+
+			
+
+		end
+
+	end
+
+
+end
+
+
+
+
+
+
+
+
+
+-- Loop saving
+
+spgg.loopSaveActive = "1"
+
+function CheckSaveStatus(ourArgument, time)
+ -- Do things to check, use ourArgument (which is the scheduleFunction's second argument)
+ if ourArgument == 9999 and spgg.loopSaveActive == "1" then
+
+	-- Text saving
+	--trigger.action.outText("Timed: Saving Ground Forces" , 10)
+	env.info('-- SPGG - Timed: Saving Ground Forces - Start')	
+	
+	-- Save Ground Forces
+
+	spgg.save()
+	
+	env.info('-- SPGG - Timed: Saving Ground Forces - End')
+	
+	-- Keep going
+   return time + spgg.Savetime
+ else
+ 
+ 	-- Text saving
+	--trigger.action.outText("Timed Last: Saving Ground Forces" , 10)
+	 
+	env.info('-- SPGG - Timed: Saving schedule has been canceled')
+	 
+	-- Save Ground Forces
+
+	--spgg.save()
+	
+	--env.info('-- SPGG - Timed: Saving Ground Forces - End - Timer Schedual ended')
+	
+	-- That's it we're done looping
+   return nil
+ end
+end
+
+
+-- Remove content of save file and stop scheduleFunction save. Used to reset your Mission to initial state before dcs server restart.
+function spgg.clearSavefile()
+
+	spgg.loopSaveActive = "0"
+	
+	
+	env.info('-- SPGG clear savefile : Reset file -' .. spgg.defaultDrive .. spgg.saveFilename)
+
+	-- Reset SPGG Persistent save file
+	local wFile = io.open(spgg.defaultDrive .. spgg.saveFilename, 'w')
+
+
+	wFile:write('')
+
+
+	wFile:close()
+	wFile = nil
+	
+	env.info('-- SPGG clear savefile: Save file cleard!')
+
+end
+
+
+
+
+
+
+spgg.Savetime = 60 * spgg.Savetime
+
+timer.scheduleFunction(CheckSaveStatus, 9999, timer.getTime() + spgg.Savetime)
+
+
+
+
+env.info('-- SPGG - Loaded Function for Save!')
