@@ -24,7 +24,6 @@ Update v022:
 
 - Added saving of Group and Unit Id of units. You can now spawn them back with the same ID. (See: spgg.ReuseID)
 (WARNING : Do not turn on if you have a old save file. Start the mission first with "false", let spgg save. Then change this to "true")
-
 - Included the Natural groups in saving process. See readme for commands.
 - Changes to save function to use less code.
 
