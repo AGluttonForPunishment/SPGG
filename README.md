@@ -20,6 +20,18 @@ Save Ground and Naval groups in DCS and load them after restart or next time you
 <br>
 <br>
 
+Update v022:
+
+- Added saving of Group and Unit Id of units. You can now spawn them back with the same ID. (See: spgg.ReuseID)
+(WARNING : Do not turn on if you have a old save file. Start the mission first with "false", let spgg save. Then change this to "true")
+
+- Included the Natural groups in saving process. See readme for commands.
+- Changes to save function to use less code.
+
+<br>
+<br>
+<br>
+
 Update v021:
 
 - Changed the script from 3 files to 1 file. (**Installation is changed, please see the installation part in the readme!**)
