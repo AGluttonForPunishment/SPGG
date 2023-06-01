@@ -20,6 +20,13 @@ Save Ground and Naval groups in DCS and load them after restart or next time you
 <br>
 <br>
 
+Update v023:
+- Added spawning with selected type of livery's for ground units
+
+<br>
+<br>
+<br>
+
 Update v022:
 
 - Added saving of Group and Unit Id of units. You can now spawn them back with the same ID. (See: spgg.ReuseID)
