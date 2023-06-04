@@ -20,6 +20,11 @@ Save Ground and Naval groups in DCS and load them after restart or next time you
 <br>
 <br>
 
+Update v023 - Hotfix 1:
+- Fixed: SPGG.lua"]:3492: attempt to index field 'wFile' (a nil value)
+
+
+
 Update v023:
 - Added spawning with selected type of livery's for ground units
 
