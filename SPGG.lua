@@ -3485,31 +3485,31 @@ function spgg.save()
 	
 
 
-	spgg.wFile = io.open(spgg.saveFilePath, 'w')
+	wFile = io.open(spgg.saveFilePath, 'w')
 	
 
 
-	spgg.wFile:write('spgg = spgg or {}' .. '\n')
+	wFile:write('spgg = spgg or {}' .. '\n')
 	
-	spgg.wFile:write('spgg.initalstart = false\n')
+	wFile:write('spgg.initalstart = false\n')
 	
-	spgg.wFile:write('spgg.bluegroups = spgg.bluegroups or {}' .. '\n')
-	spgg.wFile:write('spgg.redgroups = spgg.redgroups or {}' .. '\n')
+	wFile:write('spgg.bluegroups = spgg.bluegroups or {}' .. '\n')
+	wFile:write('spgg.redgroups = spgg.redgroups or {}' .. '\n')
 	
-	spgg.wFile:write('spgg.bluestaticobj = spgg.bluestaticobj or {}' .. '\n')
-	spgg.wFile:write('spgg.redstaticobj = spgg.redstaticobj or {}' .. '\n')
+	wFile:write('spgg.bluestaticobj = spgg.bluestaticobj or {}' .. '\n')
+	wFile:write('spgg.redstaticobj = spgg.redstaticobj or {}' .. '\n')
 	
-	spgg.wFile:write('spgg.blueseagroups = spgg.blueseagroups or {}' .. '\n')
-	spgg.wFile:write('spgg.redseagroups = spgg.redseagroups or {}' .. '\n')
+	wFile:write('spgg.blueseagroups = spgg.blueseagroups or {}' .. '\n')
+	wFile:write('spgg.redseagroups = spgg.redseagroups or {}' .. '\n')
 	
-	spgg.wFile:write('spgg.neutralgroups = spgg.neutralgroups or {}' .. '\n')
-	spgg.wFile:write('spgg.neutralgroups = spgg.neutralgroups or {}' .. '\n')
+	wFile:write('spgg.neutralgroups = spgg.neutralgroups or {}' .. '\n')
+	wFile:write('spgg.neutralgroups = spgg.neutralgroups or {}' .. '\n')
 	
-	spgg.wFile:write('spgg.neutralstaticobj = spgg.neutralstaticobj or {}' .. '\n')
-	spgg.wFile:write('spgg.neutralstaticobj = spgg.neutralstaticobj or {}' .. '\n')
+	wFile:write('spgg.neutralstaticobj = spgg.neutralstaticobj or {}' .. '\n')
+	wFile:write('spgg.neutralstaticobj = spgg.neutralstaticobj or {}' .. '\n')
 	
-	spgg.wFile:write('spgg.neutralseagroups = spgg.neutralseagroups or {}' .. '\n')
-	spgg.wFile:write('spgg.neutralseagroups = spgg.neutralseagroups or {}' .. '\n')
+	wFile:write('spgg.neutralseagroups = spgg.neutralseagroups or {}' .. '\n')
+	wFile:write('spgg.neutralseagroups = spgg.neutralseagroups or {}' .. '\n')
 	
 	
 	
@@ -3519,24 +3519,24 @@ function spgg.save()
 		--Backup save file
 		local _timesave = timer.getTime()
 		local _dhmsTimeleft = spgg.save_time(_timesave)
-		spgg.wBackupFile = io.open(spgg.backupPath .. spgg.saveFilename .. "_inGameTime_" .. _dhmsTimeleft .. '.lua', 'w')
+		wBackupFile = io.open(spgg.backupPath .. spgg.saveFilename .. "_inGameTime_" .. _dhmsTimeleft .. '.lua', 'w')
 		
-		spgg.wBackupFile:write('spgg = spgg or {}' .. '\n')
-		spgg.wBackupFile:write('spgg.bluegroups = spgg.bluegroups or {}' .. '\n')
-		spgg.wBackupFile:write('spgg.redgroups = spgg.redgroups or {}' .. '\n')
-		spgg.wBackupFile:write('spgg.bluestaticobj = spgg.bluestaticobj or {}' .. '\n')
-		spgg.wBackupFile:write('spgg.redstaticobj = spgg.redstaticobj or {}' .. '\n')
-		spgg.wBackupFile:write('spgg.blueseagroups = spgg.blueseagroups or {}' .. '\n')
-		spgg.wBackupFile:write('spgg.redseagroups = spgg.redseagroups or {}' .. '\n')
+		wBackupFile:write('spgg = spgg or {}' .. '\n')
+		wBackupFile:write('spgg.bluegroups = spgg.bluegroups or {}' .. '\n')
+		wBackupFile:write('spgg.redgroups = spgg.redgroups or {}' .. '\n')
+		wBackupFile:write('spgg.bluestaticobj = spgg.bluestaticobj or {}' .. '\n')
+		wBackupFile:write('spgg.redstaticobj = spgg.redstaticobj or {}' .. '\n')
+		wBackupFile:write('spgg.blueseagroups = spgg.blueseagroups or {}' .. '\n')
+		wBackupFile:write('spgg.redseagroups = spgg.redseagroups or {}' .. '\n')
 		
-		spgg.wBackupFile:write('spgg.neutralgroups = spgg.neutralgroups or {}' .. '\n')
-		spgg.wBackupFile:write('spgg.neutralgroups = spgg.neutralgroups or {}' .. '\n')
+		wBackupFile:write('spgg.neutralgroups = spgg.neutralgroups or {}' .. '\n')
+		wBackupFile:write('spgg.neutralgroups = spgg.neutralgroups or {}' .. '\n')
 	
-		spgg.wBackupFile:write('spgg.neutralstaticobj = spgg.neutralstaticobj or {}' .. '\n')
-		spgg.wBackupFile:write('spgg.neutralstaticobj = spgg.neutralstaticobj or {}' .. '\n')
+		wBackupFile:write('spgg.neutralstaticobj = spgg.neutralstaticobj or {}' .. '\n')
+		wBackupFile:write('spgg.neutralstaticobj = spgg.neutralstaticobj or {}' .. '\n')
 	
-		spgg.wBackupFile:write('spgg.neutralseagroups = spgg.neutralseagroups or {}' .. '\n')
-		spgg.wBackupFile:write('spgg.neutralseagroups = spgg.neutralseagroups or {}' .. '\n')
+		wBackupFile:write('spgg.neutralseagroups = spgg.neutralseagroups or {}' .. '\n')
+		wBackupFile:write('spgg.neutralseagroups = spgg.neutralseagroups or {}' .. '\n')
 
 	end -- if (spgg.enableBackupSaves == true) then
 
@@ -4060,13 +4060,13 @@ function spgg.save()
 
 	
 
-	spgg.wFile:close()
-	spgg.wFile = nil
+	wFile:close()
+	wFile = nil
 	
 	
 	if (spgg.enableBackupSaves == true) then
-		spgg.wBackupFile:close()
-		spgg.wBackupFile  = nil
+		wBackupFile:close()
+		wBackupFile  = nil
 	end -- if (spgg.enableBackupSaves == true) then
 	
 
@@ -4114,9 +4114,9 @@ function getObjectAndSave(coalitionId, soName)
 		
 			_writeStringTbl = 'spgg.redstaticobj'
 			
-			--spgg.wFile:write('spgg.redstaticobj['..spgg.soRedCount..'] = { ["obj"] = {} }' .. '\n')
+			--wFile:write('spgg.redstaticobj['..spgg.soRedCount..'] = { ["obj"] = {} }' .. '\n')
 	
-			--spgg.wFile:write('spgg.redstaticobj['..spgg.soRedCount..'].obj[1] = { ["type"] = "' .. _soType .. '", ["category"] = "' .. _soCategory .. '", ["name"] = "' .. soName .. '", ["unitid"] = "' .._sObjectId.. '" , ["x"] = ' .. _soCoord.x .. ', ["y"] = ' .. _soCoord.z .. ', ["heading"] = ' .. _soHdg .. ', ["country"]= '.. _country ..', }' .. '\n')
+			--wFile:write('spgg.redstaticobj['..spgg.soRedCount..'].obj[1] = { ["type"] = "' .. _soType .. '", ["category"] = "' .. _soCategory .. '", ["name"] = "' .. soName .. '", ["unitid"] = "' .._sObjectId.. '" , ["x"] = ' .. _soCoord.x .. ', ["y"] = ' .. _soCoord.z .. ', ["heading"] = ' .. _soHdg .. ', ["country"]= '.. _country ..', }' .. '\n')
 		
 			if (spgg.showEnvinfo == true) then
 				env.info('-- SPGG :  Saving Red Object: '.. _unitName .. ' - Type: ' .. _unitType .. ' - Coordinates X: ' .. _unitCoord.x .. ' - Y: ' .. _unitCoord.y .. ' - Z: ' .. _unitCoord.z .. ' - Heading: ' .. _unitHdg .. ' - Country: '.. _country .. ' - UnitId: ' .. _sObjectId)
@@ -4131,9 +4131,9 @@ function getObjectAndSave(coalitionId, soName)
 		
 			_writeStringTbl = 'spgg.bluestaticobj'
 			
-			--spgg.wFile:write('spgg.bluestaticobj['..spgg.soBlueCount..'] = { ["obj"] = {} }' .. '\n')
+			--wFile:write('spgg.bluestaticobj['..spgg.soBlueCount..'] = { ["obj"] = {} }' .. '\n')
 			
-			--spgg.wFile:write('spgg.bluestaticobj['..spgg.soBlueCount..'].obj[1] = { ["type"] = "' .. _soType .. '", ["category"] = "' .. _soCategory .. '", ["name"] = "' .. soName .. '", ["unitid"] = "' .._sObjectId.. '" , ["x"] = ' .. _soCoord.x .. ', ["y"] = ' .. _soCoord.z .. ', ["heading"] = ' .. _soHdg .. ', ["country"]= '.. _country ..', }' .. '\n')
+			--wFile:write('spgg.bluestaticobj['..spgg.soBlueCount..'].obj[1] = { ["type"] = "' .. _soType .. '", ["category"] = "' .. _soCategory .. '", ["name"] = "' .. soName .. '", ["unitid"] = "' .._sObjectId.. '" , ["x"] = ' .. _soCoord.x .. ', ["y"] = ' .. _soCoord.z .. ', ["heading"] = ' .. _soHdg .. ', ["country"]= '.. _country ..', }' .. '\n')
 
 			if (spgg.showEnvinfo == true) then
 				env.info('-- SPGG :  Saving Blue Object: '.. _unitName .. ' - Type: ' .. _unitType .. ' - Coordinates X: ' .. _unitCoord.x .. ' - Y: ' .. _unitCoord.y .. ' - Z: ' .. _unitCoord.z .. ' - Heading: ' .. _unitHdg .. ' - Country: '.. _country .. ' - UnitId: ' .. _sObjectId)
@@ -4156,14 +4156,14 @@ function getObjectAndSave(coalitionId, soName)
 		_writeStringGrp = _writeStringTbl.. '['.._gCount..'] = { ["obj"] = {} }'
 		_writeStringObj = _writeStringTbl.. '['.._gCount..'].obj[1] = { ["type"] = "' .. _soType .. '", ["category"] = "' .. _soCategory .. '", ["name"] = "' .. soName .. '", ["unitid"] = "' .._sObjectId.. '" , ["x"] = ' .. _soCoord.x .. ', ["y"] = ' .. _soCoord.z .. ', ["heading"] = ' .. _soHdg .. ', ["country"]= '.. _country ..', }'
 		
-		spgg.wFile:write(_writeStringGrp .. '\n')
-		spgg.wFile:write(_writeStringObj .. '\n')
+		wFile:write(_writeStringGrp .. '\n')
+		wFile:write(_writeStringObj .. '\n')
 		
 		--Backup
 		if (spgg.enableBackupSaves == true) then
 				
-				spgg.wBackupFile:write(_writeStringGrp .. '\n')
-				spgg.wBackupFile:write(_writeStringObj .. '\n')
+				wBackupFile:write(_writeStringGrp .. '\n')
+				wBackupFile:write(_writeStringObj .. '\n')
 			
 		end -- if (spgg.enableBackupSaves == true) then
 	
@@ -4221,12 +4221,12 @@ function getGroupAndSave(coalitionId, gpName, gpUnitSize)
 		
 
 		_writeStringGrp = _writeStringTbl.. '['.._gCount..'] = { ["groupname"] = "' ..gpName.. '", ["groupid"] = "' .._grpId.. '" ,["units"] = {} }'
-		spgg.wFile:write(_writeStringGrp .. '\n')
+		wFile:write(_writeStringGrp .. '\n')
 		
 		--Backup
 		if (spgg.enableBackupSaves == true) then
 				
-				spgg.wBackupFile:write(_writeStringGrp .. '\n')
+				wBackupFile:write(_writeStringGrp .. '\n')
 			
 		end -- if (spgg.enableBackupSaves == true) then
 		
@@ -4290,12 +4290,12 @@ function getGroupAndSave(coalitionId, gpName, gpUnitSize)
 			
 		
 			_writeStringUnt = _writeStringTbl.. '['.._gCount..'].units['..uIndex..'] = { ["type"] = "' .. _unitType .. '", ["name"] = "' .. _unitName .. '", ["unitid"] = "' .._unitId.. '", ["skill"] = "Excellent", ["x"] = ' .. _unitCoord.x .. ', ["y"] = ' .. _unitCoord.z .. ', ["heading"] = ' .. _unitHdg .. ', ["playerCanDrive"] = true, ["country"]= '.. _country ..', }'
-			spgg.wFile:write(_writeStringUnt .. '\n')
+			wFile:write(_writeStringUnt .. '\n')
 			
 			--Backup
 			if (spgg.enableBackupSaves == true) then
 				
-				spgg.wBackupFile:write(_writeStringUnt .. '\n')
+				wBackupFile:write(_writeStringUnt .. '\n')
 			
 			end -- if (spgg.enableBackupSaves == true) then
 			
@@ -4362,12 +4362,12 @@ function getSeaGroupAndSave(coalitionId, gpName, gpUnitSize)
 		end
 
 		_writeStringGrp = _writeStringTbl.. '['.._gCount..'] = { ["groupname"] = "' ..gpName.. '", ["groupid"] = "' .._grpId.. '" ,["units"] = {} }'
-		spgg.wFile:write(_writeStringGrp .. '\n')
+		wFile:write(_writeStringGrp .. '\n')
 		
 		--Backup
 		if (spgg.enableBackupSaves == true) then
 				
-			spgg.wBackupFile:write(_writeStringGrp .. '\n')
+			wBackupFile:write(_writeStringGrp .. '\n')
 			
 		end -- if (spgg.enableBackupSaves == true) then
 
@@ -4427,12 +4427,12 @@ function getSeaGroupAndSave(coalitionId, gpName, gpUnitSize)
 			end
 			
 			_writeStringUnt = _writeStringTbl.. '['.._gCount..'].units['..uIndex..'] = { ["type"] = "' .. _unitType .. '", ["name"] = "' .. _unitName .. '", ["unitid"] = "' .._unitId.. '", ["skill"] = "Excellent", ["x"] = ' .. _unitCoord.x .. ', ["y"] = ' .. _unitCoord.z .. ', ["heading"] = ' .. _unitHdg .. ', ["playerCanDrive"] = true, ["country"]= '.. _country ..', }'
-			spgg.wFile:write(_writeStringUnt .. '\n')
+			wFile:write(_writeStringUnt .. '\n')
 			
 			--Backup
 			if (spgg.enableBackupSaves == true) then
 				
-				spgg.wBackupFile:write(_writeStringUnt .. '\n')
+				wBackupFile:write(_writeStringUnt .. '\n')
 			
 			end -- if (spgg.enableBackupSaves == true) then
 			
@@ -4484,13 +4484,13 @@ function saveCtldTables()
 				end
 			
 				if (ctld.JTAC_LIMIT_RED ~= nil) and (ctld.JTAC_LIMIT_BLUE ~= nil) then
-					spgg.wFile:write('ctld.JTAC_LIMIT_RED = '.. ctld.JTAC_LIMIT_RED .. '\n')
-					spgg.wFile:write('ctld.JTAC_LIMIT_BLUE = '.. ctld.JTAC_LIMIT_BLUE .. '\n')
+					wFile:write('ctld.JTAC_LIMIT_RED = '.. ctld.JTAC_LIMIT_RED .. '\n')
+					wFile:write('ctld.JTAC_LIMIT_BLUE = '.. ctld.JTAC_LIMIT_BLUE .. '\n')
 				
 					--backup
 					if (spgg.enableBackupSaves == true) then
-						spgg.wBackupFile:write('ctld.JTAC_LIMIT_RED = '.. ctld.JTAC_LIMIT_RED .. '\n')
-						spgg.wBackupFile:write('ctld.JTAC_LIMIT_BLUE = '.. ctld.JTAC_LIMIT_BLUE .. '\n')
+						wBackupFile:write('ctld.JTAC_LIMIT_RED = '.. ctld.JTAC_LIMIT_RED .. '\n')
+						wBackupFile:write('ctld.JTAC_LIMIT_BLUE = '.. ctld.JTAC_LIMIT_BLUE .. '\n')
 					end -- if (spgg.enableBackupSaves == true) then
 					
 				end
@@ -4505,13 +4505,13 @@ function saveCtldTables()
 		if (ctld.droppedTroopsRED ~= nil) and (ctld.droppedTroopsBLUE ~= nil) then
 
 	
-			spgg.wFile:write('spgg.redtroops = spgg.redtroops or {}' .. '\n')
-			spgg.wFile:write('spgg.bluetroops = spgg.bluetroops or {}' .. '\n')
+			wFile:write('spgg.redtroops = spgg.redtroops or {}' .. '\n')
+			wFile:write('spgg.bluetroops = spgg.bluetroops or {}' .. '\n')
 		
 			--backup
 			if (spgg.enableBackupSaves == true) then
-				spgg.wBackupFile:write('spgg.redtroops = spgg.redtroops or {}' .. '\n')
-				spgg.wBackupFile:write('spgg.bluetroops = spgg.bluetroops or {}' .. '\n')
+				wBackupFile:write('spgg.redtroops = spgg.redtroops or {}' .. '\n')
+				wBackupFile:write('spgg.bluetroops = spgg.bluetroops or {}' .. '\n')
 			end -- if (spgg.enableBackupSaves == true) then
 	
 	
@@ -4519,11 +4519,11 @@ function saveCtldTables()
 		
 		
 				
-				spgg.wFile:write('spgg.redtroops['..i..'] = { ["name"] = "' .. ctld.droppedTroopsRED[i]..'" }' .. '\n')
+				wFile:write('spgg.redtroops['..i..'] = { ["name"] = "' .. ctld.droppedTroopsRED[i]..'" }' .. '\n')
 			
 				--backup
 				if (spgg.enableBackupSaves == true) then
-					spgg.wBackupFile:write('spgg.redtroops['..i..'] = { ["name"] = "' .. ctld.droppedTroopsRED[i]..'" }' .. '\n')
+					wBackupFile:write('spgg.redtroops['..i..'] = { ["name"] = "' .. ctld.droppedTroopsRED[i]..'" }' .. '\n')
 				end -- if (spgg.enableBackupSaves == true) then
 				
 			end
@@ -4531,11 +4531,11 @@ function saveCtldTables()
 			for i = 1, #ctld.droppedTroopsBLUE do
 		
 		
-				spgg.wFile:write('spgg.bluetroops['..i..'] = { ["name"] = "' .. ctld.droppedTroopsBLUE[i]..'" }' .. '\n')
+				wFile:write('spgg.bluetroops['..i..'] = { ["name"] = "' .. ctld.droppedTroopsBLUE[i]..'" }' .. '\n')
 			
 				--backup
 				if (spgg.enableBackupSaves == true) then
-					spgg.wBackupFile:write('spgg.bluetroops['..i..'] = { ["name"] = "' .. ctld.droppedTroopsBLUE[i]..'" }' .. '\n')
+					wBackupFile:write('spgg.bluetroops['..i..'] = { ["name"] = "' .. ctld.droppedTroopsBLUE[i]..'" }' .. '\n')
 				end -- if (spgg.enableBackupSaves == true) then
 				
 			end
@@ -4561,20 +4561,20 @@ function saveCtldTables()
 		
 			if (ctld.builtFOBS ~= nil) then
 			
-				spgg.wFile:write('spgg.builtFOBS = spgg.builtFOBS or {}' .. '\n')
+				wFile:write('spgg.builtFOBS = spgg.builtFOBS or {}' .. '\n')
 				
 				if (spgg.enableBackupSaves == true) then
-					spgg.wBackupFile:write('spgg.builtFOBS = spgg.builtFOBS or {}' .. '\n')
+					wBackupFile:write('spgg.builtFOBS = spgg.builtFOBS or {}' .. '\n')
 				end -- if (spgg.enableBackupSaves == true) then
 			
 				
 				for i = 1, #ctld.builtFOBS do
 		
-					spgg.wFile:write('spgg.builtFOBS['..i..'] = { ["name"] = "' .. ctld.builtFOBS[i]..'" }' .. '\n')
+					wFile:write('spgg.builtFOBS['..i..'] = { ["name"] = "' .. ctld.builtFOBS[i]..'" }' .. '\n')
 				
 					--backup
 					if (spgg.enableBackupSaves == true) then
-						spgg.wBackupFile:write('spgg.builtFOBS['..i..'] = { ["name"] = "' .. ctld.builtFOBS[i]..'" }' .. '\n')
+						wBackupFile:write('spgg.builtFOBS['..i..'] = { ["name"] = "' .. ctld.builtFOBS[i]..'" }' .. '\n')
 					end -- if (spgg.enableBackupSaves == true) then
 					
 				end -- end of: for i = 1, #ctld.builtFOBS do
@@ -4585,19 +4585,19 @@ function saveCtldTables()
 			
 			if (ctld.logisticUnits ~= nil) then
 			
-				spgg.wFile:write('spgg.logisticUnits = spgg.logisticUnits or {}' .. '\n')
+				wFile:write('spgg.logisticUnits = spgg.logisticUnits or {}' .. '\n')
 				
 				if (spgg.enableBackupSaves == true) then
-					spgg.wBackupFile:write('spgg.logisticUnits = spgg.logisticUnits or {}' .. '\n')
+					wBackupFile:write('spgg.logisticUnits = spgg.logisticUnits or {}' .. '\n')
 				end -- if (spgg.enableBackupSaves == true) then
 				
 				for i = 1, #ctld.logisticUnits do
 		
-					spgg.wFile:write('spgg.logisticUnits['..i..'] = { ["name"] = "' .. ctld.logisticUnits[i]..'" }' .. '\n')
+					wFile:write('spgg.logisticUnits['..i..'] = { ["name"] = "' .. ctld.logisticUnits[i]..'" }' .. '\n')
 				
 					--backup
 					if (spgg.enableBackupSaves == true) then
-						spgg.wBackupFile:write('spgg.logisticUnits['..i..'] = { ["name"] = "' .. ctld.logisticUnits[i]..'" }' .. '\n')
+						wBackupFile:write('spgg.logisticUnits['..i..'] = { ["name"] = "' .. ctld.logisticUnits[i]..'" }' .. '\n')
 					end -- if (spgg.enableBackupSaves == true) then
 					
 				end -- end of: for i = 1, #ctld.logisticUnits do
@@ -4622,9 +4622,9 @@ end
 function spgg.SaveAASystemDetails()
 
 	
-	spgg.wFile:write('spgg.completeAASystems = {} \n')
+	wFile:write('spgg.completeAASystems = {} \n')
 	if (spgg.enableBackupSaves == true) then
-		spgg.wBackupFile:write('spgg.completeAASystems = {} \n')
+		wBackupFile:write('spgg.completeAASystems = {} \n')
 	end
 
 	for _groupName, _hawkDetails in pairs(ctld.completeAASystems) do
@@ -4633,21 +4633,21 @@ function spgg.SaveAASystemDetails()
 
 
 			
-			spgg.wFile:write('spgg.completeAASystems["' .. _groupName .. '"] = {} \n')
+			wFile:write('spgg.completeAASystems["' .. _groupName .. '"] = {} \n')
 			
 			if (spgg.enableBackupSaves == true) then
-				spgg.wBackupFile:write('spgg.completeAASystems["' .. _groupName .. '"] = {} \n')
+				wBackupFile:write('spgg.completeAASystems["' .. _groupName .. '"] = {} \n')
 			end -- if (spgg.enableBackupSaves == true) then
 			
 			--spgg.completeAASystems[_groupName] = {}
 			
 			for i = 1, #_hawkDetails do
 		
-				spgg.wFile:write('table.insert(spgg.completeAASystems["'.. _groupName ..'"], {unit= "'.. _hawkDetails[i].unit ..'", name= "'.. _hawkDetails[i].name .. '", pointX= "'.. _hawkDetails[i].point.x .. '", pointY= "'.. _hawkDetails[i].point.y .. '", pointZ= "'.. _hawkDetails[i].point.z .. '", system= "'.. _hawkDetails[i].system.name ..  '" }) \n')
+				wFile:write('table.insert(spgg.completeAASystems["'.. _groupName ..'"], {unit= "'.. _hawkDetails[i].unit ..'", name= "'.. _hawkDetails[i].name .. '", pointX= "'.. _hawkDetails[i].point.x .. '", pointY= "'.. _hawkDetails[i].point.y .. '", pointZ= "'.. _hawkDetails[i].point.z .. '", system= "'.. _hawkDetails[i].system.name ..  '" }) \n')
 					
 				
 				if (spgg.enableBackupSaves == true) then
-					spgg.wBackupFile:write('table.insert(spgg.completeAASystems["'.. _groupName ..'"], {unit= "'.. _hawkDetails[i].unit ..'", name= "'.. _hawkDetails[i].name .. '", pointX= "'.. _hawkDetails[i].point.x .. '", pointY= "'.. _hawkDetails[i].point.y .. '", pointZ= "'.. _hawkDetails[i].point.z .. '", system= "'.. _hawkDetails[i].system.name ..  '" }) \n')
+					wBackupFile:write('table.insert(spgg.completeAASystems["'.. _groupName ..'"], {unit= "'.. _hawkDetails[i].unit ..'", name= "'.. _hawkDetails[i].name .. '", pointX= "'.. _hawkDetails[i].point.x .. '", pointY= "'.. _hawkDetails[i].point.y .. '", pointZ= "'.. _hawkDetails[i].point.z .. '", system= "'.. _hawkDetails[i].system.name ..  '" }) \n')
 				end -- if (spgg.enableBackupSaves == true) then
 			
 			end
