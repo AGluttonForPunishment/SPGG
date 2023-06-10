@@ -1,7 +1,7 @@
 -- Simple Persistent Ground Groups (SPGG)
 -- By A Glutton For Punishment (aka Kanelbolle)
 
-env.info('-- SPGG v023 : Loading!')
+env.info('-- SPGG v024 : Loading!')
 spgg = spgg or {} -- do not remove
 
 -- todo: Add livery defaults for units!
@@ -13,7 +13,7 @@ spgg = spgg or {} -- do not remove
 
 
 --------------------------------------------------------------------------------------------------------------
--- DO NOT CHANGE the "spgg.defaultDrive" IF YOU DON'T WANT TO CHANGE THE DEFAULT PATH FOR THE SAVE FILE!!! 	--
+-- DO NOT CHANGE the "spgg.loadDir" IF YOU DON'T WANT TO CHANGE THE DEFAULT PATH FOR THE SAVE FILE!!! 	--
 -- MOST CASES CHANGING THIS IS NOT NEEDED SINCE IT SAVES THE FILE IN THE SERVER INSTANC PROFILE PATH!!		--
 --------------------------------------------------------------------------------------------------------------
 
@@ -25,37 +25,37 @@ spgg = spgg or {} -- do not remove
 --
 -- Example Locations:
 -- The line below is Example: <your dcs profile path>\Missions\SPGG\
--- spgg.defaultDrive = lfs.writedir() .. [[Missions\SPGG\]]
+-- spgg.loadDir = lfs.writedir() .. [[Missions\SPGG\]]
 --
 -- 
 --
 -- The line below is Example to point the script folder to : C:\MyScripts\DCS\SPGG\
 -- (We have here removed "lfs.writedir()" to get the direct path)
 --
--- spgg.defaultDrive = [[C:\MyScripts\DCS\SPGG\]]
+-- spgg.loadDir = [[C:\MyScripts\DCS\SPGG\]]
 -- 
 --
 -- The line below is : <your dcs profile path>\Scripts\
-spgg.defaultDrive = lfs.writedir() .. [[Scripts\]]
+spgg.loadDir = lfs.writedir() .. [[Scripts\Wargames-Pve-Modern-SinaiMap\]]
 
 -- Save filename
 spgg.saveFilename = "SPGG_savefile.lua"
 
 -- Combine above path and file
-spgg.saveFilePath = spgg.defaultDrive .. spgg.saveFilename
+spgg.saveFilePath = spgg.loadDir .. spgg.saveFilename
 
 -- Writing the path to the save file used above to dcs.log
 env.info('-- SPGG : SAVE Dir: ' .. spgg.saveFilePath)
 
 
 -- Backup folder name (Folder must be crated if it does not exist)
--- Uses the spgg.defaultDrive as a starting path 
+-- Uses the spgg.loadDir as a starting path 
 spgg.backupSaveDirName = "SPGG-Backup-Saves\\" -- must have \\ between every folder level\sub-folder
 
 
 -- Saves backup files of your save at the "spgg.backupSaveDirName" directory!
 -- (Folder must be crated if it does not exist)
--- Uses the spgg.defaultDrive as a starting path 
+-- Uses the spgg.loadDir as a starting path 
 spgg.enableBackupSaves = false
 
 
@@ -64,22 +64,18 @@ spgg.Savetime = 30
 
 -- Reuse GroupNames from save file
 -- (If names exist the group will overwrite the existing unit, recommended to be false if mission is not designed for this)
-spgg.ReuseGroupNames = false
+spgg.ReuseGroupNames = true
 
 -- Reuse Unit Names from save file
 -- (If names exist the unit will overwrite or not spawn, recommended to be false if mission is not designed for this)
-spgg.ReuseUnitNames = false
+spgg.ReuseUnitNames = true
 
 
 -- Reuse Unit and Group ID from save file (Overrides "spgg.useMIST" unit and group ID assignment)
 -- (If id's exist the group will overwrite or not spawn, recommended to be false if mission is not designed for this.
 -- Also enables Datalink for ground units when they spawn)
 -- WARNING : Do not turn on if you have a old save file. Start the mission first with "false", let spgg save. Then change this to "true"
-spgg.ReuseID = false
-
--- If "True", only the Ground groups and Sea groups that  are active in the Mission are saved. (Static objects are not inclided in the check)
-spgg.saveOnlyActiveGroups = true
-
+spgg.ReuseID = true
 
 -- If you don't want to use "MIST" you can disable it here. (The MIST version of CTLD will not work without MIST)
 -- MIST is only used for the mist.getNextGroupId() & mist.getNextUnitId() functions in the script (MIST unit Table).
@@ -87,6 +83,22 @@ spgg.saveOnlyActiveGroups = true
 -- Hardcoded groupid's and unitid's in other scripts might cause problems. (check that this is not the case)
 -- Datalink for ground units is off if this is false (the script does not know what GroupID to assigne it to)
 spgg.useMIST = false
+
+
+-- If "true", only the Ground groups and Sea groups that are active in the Mission are saved. (Static objects does not support this)
+spgg.saveOnlyActiveGroups = true
+
+-- If "true", the units will spawn back with the same "Late Activated" state as when they where saved.
+-- (See spgg.saveOnlyActiveGroups if you want to save Inactive groups)
+spgg.spawnGroupsAsSavedLateActivatedState = false
+
+-- If "true", all units spawn as "Late Activated". (Mission maker has to make custom activation code. See spgg.saveOnlyActiveGroups if you want to save Inactive groups)
+-- (Static Objects does not support this in DCS)
+-- Overrides "spgg.spawnGroupsAsSavedLateActivatedState" !!!
+spgg.spawnAllGroupsAsInactive = false
+
+-- If "true", all units spawn as visible when "Late Activated" is on (Only active if spgg.spawnAllGroupsAsInactive or spgg.spawnGroupsAsSavedLateActivatedState is true)
+spgg.spawnVisibleInactive = false
 
 
 -- Don't show Message box in DCS. Use logg file insted. (spgg.showEnvinfo)
@@ -120,7 +132,7 @@ spgg.includeStaticObjectTypeTbl = {
 
 
 -- Select what type of livery/paint/camoflage is used when spawning ground units.
--- DCS does not allow checking livery from units, so you can set the type you want in your mission when spawning from a save file here.
+-- DCS does not allow checking livery of units by script, so you can set the type you want in your mission when spawning from a save file here.
 
 -- Liverys:
 
@@ -521,7 +533,7 @@ spgg.groundUnitLivery["M48 Chaparral"] =
 
 
 -- Backup Path string
-spgg.backupPath = spgg.defaultDrive .. spgg.backupSaveDirName
+spgg.backupPath = spgg.loadDir .. spgg.backupSaveDirName
 
 -- make shure the value exist!
 spgg.initalstart = true
@@ -594,8 +606,8 @@ env.info('-- SPGG :  Loading Function for Loading Groups!')
 
 spgg.tblPrevSamSystems = {}
 
-local _noMistGroupCounterID = 0
-local _noMistUnitCounterID = 0
+spgg.noMistCountGrp = 0
+spgg.noMistCountUnit = 0
 
 
 
@@ -614,12 +626,13 @@ function spgg.spawnBlueGroundGroup()
 
 		for spwnGpIdx = 1, #spgg.bluegroups do
 
-			_noMistGroupCounterID = _noMistGroupCounterID + 1 
+			spgg.noMistCountGrp = spgg.noMistCountGrp + 1 
 			
 			local _isJtacAdd = false
 			local _ctldjtacGroupName = ""
 			local _ctldjtacUnit = ""
 			local _groupId = 0
+			
 			
 			if (spgg.useMIST == true) and (mist ~= nil) then 
 				_groupId = mist.getNextGroupId()
@@ -640,7 +653,7 @@ function spgg.spawnBlueGroundGroup()
 				if (spgg.useMIST == true) and (mist ~= nil) then 
 					_loadGrpName = "BlueAiGroundGroup".. _groupId
 				else
-					_loadGrpName = "BlueAiGroundGroupNM" .. _noMistGroupCounterID
+					_loadGrpName = "BlueAiGroundGroupNM" .. spgg.noMistCountGrp
 				end -- of if (spgg.useMIST == true) and (mist ~= nil) then
 				
 			end -- of if (spgg.ReuseGroupNames == true) then
@@ -690,6 +703,41 @@ function spgg.spawnBlueGroundGroup()
 			end
 			
 			
+			if (spgg.spawnGroupsAsSavedLateActivatedState == true) then
+				
+				if (spgg.bluegroups[spwnGpIdx].lateActivation ~= nil) then 
+					
+					local _lateActivation = spgg.bluegroups[spwnGpIdx].lateActivation
+					
+					if (_lateActivation == 1) then
+						_data["lateActivation"] = true
+						
+						if (spgg.spawnVisibleInactive == true) then
+							_data["visible"] = true
+						end
+						
+					else
+						
+						_data["lateActivation"] = false
+					end -- if (_lateActivation == 1) then
+					
+				end -- of if (spgg.bluegroups[spwnGpIdx].lateActivation ~= nil) then
+				
+			end -- if (spgg.spawnGroupsAsSavedLateActivatedState == true) then
+			
+			
+			
+			-- Overrides spgg.spawnGroupsAsSavedLateActivatedState
+			if (spgg.spawnAllGroupsAsInactive == true) then
+				
+				_data["lateActivation"] = true
+				
+				if (spgg.spawnVisibleInactive == true) then
+					_data["visible"] = true
+				end
+				
+			end
+			
 
 
 		if (spgg.showEnvinfo == true) then
@@ -703,7 +751,7 @@ function spgg.spawnBlueGroundGroup()
 			for spwnUnitIdx = 1, #spgg.bluegroups[spwnGpIdx].units do
                        
 
-				_noMistUnitCounterID = _noMistUnitCounterID + 1
+				spgg.noMistCountUnit = spgg.noMistCountUnit + 1
 				local _unitId = 0
 				
 				if (spgg.useMIST == true) and (spgg.bluegroups[spwnGpIdx].units[spwnUnitIdx].unitid ~= nil) then
@@ -815,7 +863,7 @@ function spgg.spawnBlueGroundGroup()
 					if (spgg.useMIST == true) and (mist ~= nil) then 
 						newUnitName = "BlueAiGroundUnit".. _unitId
 					else
-						newUnitName = "BlueAiGroundUnitNM".. _noMistUnitCounterID
+						newUnitName = "BlueAiGroundUnitNM".. spgg.noMistCountUnit
 						--env.info("-- Blue Unit Name:  " .. newUnitName)
 					end -- of if (spgg.useMIST == true) and (mist ~= nil) then
 					
@@ -1058,7 +1106,7 @@ function spgg.spawnRedGroundGroup()
 
 		for spwnGpIdx = 1, #spgg.redgroups do
 
-			_noMistGroupCounterID = _noMistGroupCounterID + 1 
+			spgg.noMistCountGrp = spgg.noMistCountGrp + 1 
 			
 			local _isJtacAdd = false
 			local _ctldjtacGroupName = ""
@@ -1083,7 +1131,7 @@ function spgg.spawnRedGroundGroup()
 				if (spgg.useMIST == true) and (mist ~= nil) then 
 					_loadGrpName = "RedAiGroundGroup".. _groupId
 				else
-					_loadGrpName = "RedAiGroundGroupNM" .. _noMistGroupCounterID
+					_loadGrpName = "RedAiGroundGroupNM" .. spgg.noMistCountGrp
 				end -- of if (spgg.useMIST == true) and (mist ~= nil) then
 				
 			end -- of if (spgg.ReuseGroupNames == true) then
@@ -1132,6 +1180,43 @@ function spgg.spawnRedGroundGroup()
 				end
 			end
 
+			
+			if (spgg.spawnGroupsAsSavedLateActivatedState == true) then
+				
+				if (spgg.redgroups[spwnGpIdx].lateActivation ~= nil) then 
+					
+					local _lateActivation = spgg.redgroups[spwnGpIdx].lateActivation
+						
+					if (_lateActivation == 1) then
+					
+						_data["lateActivation"] = true
+						
+						if (spgg.spawnVisibleInactive == true) then
+							_data["visible"] = true
+						end
+						
+					else
+						
+						_data["lateActivation"] = false
+					end -- if (_lateActivation == 1) then
+					
+				end -- of if (spgg.redgroups[spwnGpIdx].lateActivation ~= nil) then
+				
+			end -- if (spgg.spawnGroupsAsSavedLateActivatedState == true) then
+			
+			
+			
+			-- Overrides spgg.spawnGroupsAsSavedLateActivatedState
+			if (spgg.spawnAllGroupsAsInactive == true) then
+				
+				_data["lateActivation"] = true
+				
+				if (spgg.spawnVisibleInactive == true) then
+					_data["visible"] = true
+				end
+				
+			end
+
 
 		if (spgg.showEnvinfo == true) then
 			local _Msg = spgg.redgroups[spwnGpIdx].units[1].type
@@ -1144,7 +1229,7 @@ function spgg.spawnRedGroundGroup()
 			for spwnUnitIdx = 1, #spgg.redgroups[spwnGpIdx].units do
                        
 
-				_noMistUnitCounterID = _noMistUnitCounterID + 1
+				spgg.noMistCountUnit = spgg.noMistCountUnit + 1
 				local _unitId = 0
 				
 				if (spgg.useMIST == true) and (mist ~= nil) then
@@ -1255,7 +1340,7 @@ function spgg.spawnRedGroundGroup()
 					if (spgg.useMIST == true) and (mist ~= nil) then
 						newUnitName = "RedAiGroundUnit".. _unitId
 					else
-						newUnitName = "RedAiGroundUnitNM".. _noMistUnitCounterID
+						newUnitName = "RedAiGroundUnitNM".. spgg.noMistCountUnit
 						--env.info("-- Red Unit Name:  " .. newUnitName)
 					end -- of if (spgg.useMIST == true) and (mist ~= nil) then
 					
@@ -1499,7 +1584,7 @@ function spgg.spawnNeutralGroundGroup()
 
 		for spwnGpIdx = 1, #spgg.neutralgroups do
 
-			_noMistGroupCounterID = _noMistGroupCounterID + 1 
+			spgg.noMistCountGrp = spgg.noMistCountGrp + 1 
 			
 			local _isJtacAdd = false
 			local _ctldjtacGroupName = ""
@@ -1524,7 +1609,7 @@ function spgg.spawnNeutralGroundGroup()
 				if (spgg.useMIST == true) and (mist ~= nil) then 
 					_loadGrpName = "NeutralAiGroundGroup".. _groupId
 				else
-					_loadGrpName = "NeutralAiGroundGroupNM" .. _noMistGroupCounterID
+					_loadGrpName = "NeutralAiGroundGroupNM" .. spgg.noMistCountGrp
 				end -- of if (spgg.useMIST == true) and (mist ~= nil) then
 				
 			end -- of if (spgg.ReuseGroupNames == true) then
@@ -1572,6 +1657,42 @@ function spgg.spawnNeutralGroundGroup()
 					env.info('-- SPGG :  neutralgroups groupId with ReuseID : ' .. _data.groupId)
 				end
 			end
+			
+			
+			if (spgg.spawnGroupsAsSavedLateActivatedState == true) then
+				
+				if (spgg.neutralgroups[spwnGpIdx].lateActivation ~= nil) then 
+					
+					local _lateActivation = spgg.neutralgroups[spwnGpIdx].lateActivation
+					
+					if (_lateActivation == 1) then
+						_data["lateActivation"] = true
+						
+						if (spgg.spawnVisibleInactive == true) then
+							_data["visible"] = true
+						end
+						
+					else
+						
+						_data["lateActivation"] = false
+					end -- if (_lateActivation == 1) then
+					
+				end -- of if (spgg.neutralgroups[spwnGpIdx].lateActivation ~= nil) then
+				
+			end -- if (spgg.spawnGroupsAsSavedLateActivatedState == true) then
+			
+			
+			
+			-- Overrides spgg.spawnGroupsAsSavedLateActivatedState
+			if (spgg.spawnAllGroupsAsInactive == true) then
+				
+				_data["lateActivation"] = true
+				
+				if (spgg.spawnVisibleInactive == true) then
+					_data["visible"] = true
+				end
+				
+			end
 
 
 		if (spgg.showEnvinfo == true) then
@@ -1585,7 +1706,7 @@ function spgg.spawnNeutralGroundGroup()
 			for spwnUnitIdx = 1, #spgg.neutralgroups[spwnGpIdx].units do
                        
 
-				_noMistUnitCounterID = _noMistUnitCounterID + 1
+				spgg.noMistCountUnit = spgg.noMistCountUnit + 1
 				local _unitId = 0
 				
 				if (spgg.useMIST == true) and (mist ~= nil) then
@@ -1696,7 +1817,7 @@ function spgg.spawnNeutralGroundGroup()
 					if (spgg.useMIST == true) and (mist ~= nil) then
 						newUnitName = "NeutralAiGroundUnit".. _unitId
 					else
-						newUnitName = "NeutralAiGroundUnitNM".. _noMistUnitCounterID
+						newUnitName = "NeutralAiGroundUnitNM".. spgg.noMistCountUnit
 						--env.info("-- Neutral Unit Name:  " .. newUnitName)
 					end -- of if (spgg.useMIST == true) and (mist ~= nil) then
 					
@@ -1950,8 +2071,8 @@ function spgg.spawnBlueStaticObject()
 			local _unitId = 0
 			local _groupId = 0
 			
-			_noMistGroupCounterID = _noMistGroupCounterID + 1 
-			_noMistUnitCounterID = _noMistUnitCounterID + 1
+			spgg.noMistCountGrp = spgg.noMistCountGrp + 1 
+			spgg.noMistCountUnit = spgg.noMistCountUnit + 1
 			
 			
 			if (spgg.useMIST == true) and (mist ~= nil) then
@@ -2012,7 +2133,7 @@ function spgg.spawnBlueStaticObject()
 						_soNewName = "Static Object #" .._unitId.. " Blue"
 					else
 
-						_soNewName = "Static Object NM #" .. _noMistUnitCounterID .. " Blue"
+						_soNewName = "Static Object NM #" .. spgg.noMistCountUnit .. " Blue"
 						
 					end -- of if (spgg.useMIST == true) and (mist ~= nil) then
 					
@@ -2165,8 +2286,8 @@ function spgg.spawnRedStaticObject()
 			local _unitId = 0
 			local _groupId = 0
 			
-			_noMistGroupCounterID = _noMistGroupCounterID + 1 
-			_noMistUnitCounterID = _noMistUnitCounterID + 1
+			spgg.noMistCountGrp = spgg.noMistCountGrp + 1 
+			spgg.noMistCountUnit = spgg.noMistCountUnit + 1
 			
 			
 			if (spgg.useMIST == true) and (mist ~= nil) then
@@ -2227,7 +2348,7 @@ function spgg.spawnRedStaticObject()
 						_soNewName = "Static Object #" .._unitId.. " Red"
 					else
 
-						_soNewName = "Static Object NM #" .. _noMistUnitCounterID .. " Red"
+						_soNewName = "Static Object NM #" .. spgg.noMistCountUnit .. " Red"
 						
 					end -- of if (spgg.useMIST == true) and (mist ~= nil) then
 					
@@ -2381,8 +2502,8 @@ function spgg.spawnNeutralStaticObject()
 			local _unitId = 0
 			local _groupId = 0
 			
-			_noMistGroupCounterID = _noMistGroupCounterID + 1 
-			_noMistUnitCounterID = _noMistUnitCounterID + 1
+			spgg.noMistCountGrp = spgg.noMistCountGrp + 1 
+			spgg.noMistCountUnit = spgg.noMistCountUnit + 1
 			
 			
 			if (spgg.useMIST == true) and (mist ~= nil) then
@@ -2443,7 +2564,7 @@ function spgg.spawnNeutralStaticObject()
 						_soNewName = "Static Object #" .._unitId.. " Neutral"
 					else
 
-						_soNewName = "Static Object NM #" .. _noMistUnitCounterID .. " Neutral"
+						_soNewName = "Static Object NM #" .. spgg.noMistCountUnit .. " Neutral"
 						
 					end -- of if (spgg.useMIST == true) and (mist ~= nil) then
 					
@@ -2601,7 +2722,7 @@ if (spgg ~= nil) and (spgg.blueseagroups ~= nil) then
 		local _unitId = 0
 		local _groupId = 0
 			
-		_noMistGroupCounterID = _noMistGroupCounterID + 1 
+		spgg.noMistCountGrp = spgg.noMistCountGrp + 1 
 
 		if (spgg.useMIST == true) and (mist ~= nil) then
 			_groupId = mist.getNextGroupId()
@@ -2623,7 +2744,7 @@ if (spgg ~= nil) and (spgg.blueseagroups ~= nil) then
 					if (spgg.useMIST == true) and (mist ~= nil) then
 						_loadGrpName = "BlueAiSeaGroup".. _groupId
 					else
-						_loadGrpName = "BlueAiSeaGroupNM".. _noMistGroupCounterID
+						_loadGrpName = "BlueAiSeaGroupNM".. spgg.noMistCountGrp
 					end -- of if (spgg.useMIST == true) and (mist ~= nil) then
 					
 		end -- of if (spgg.ReuseUnitNames == true) then
@@ -2671,11 +2792,49 @@ if (spgg ~= nil) and (spgg.blueseagroups ~= nil) then
 			end
 		end
 		
+		
+		
+			if (spgg.spawnGroupsAsSavedLateActivatedState == true) then
+				
+				if (spgg.blueseagroups[spwnGpIdx].lateActivation ~= nil) then 
+					
+					local _lateActivation = spgg.blueseagroups[spwnGpIdx].lateActivation
+					
+					if (_lateActivation == 1) then
+						_data["lateActivation"] = true
+						
+						if (spgg.spawnVisibleInactive == true) then
+							_data["visible"] = true
+						end
+						
+					else
+						
+						_data["lateActivation"] = false
+					end -- if (_lateActivation == 1) then
+					
+				end -- of if (spgg.blueseagroups[spwnGpIdx].lateActivation ~= nil) then
+				
+			end -- if (spgg.spawnGroupsAsSavedLateActivatedState == true) then
+			
+			
+			
+			-- Overrides spgg.spawnGroupsAsSavedLateActivatedState
+			if (spgg.spawnAllGroupsAsInactive == true) then
+				
+				_data["lateActivation"] = true
+				
+				if (spgg.spawnVisibleInactive == true) then
+					_data["visible"] = true
+				end
+				
+			end
+
+		
 					
 		for spwnUnitIdx = 1, #spgg.blueseagroups[spwnGpIdx].units do
                        
 
-			_noMistUnitCounterID = _noMistUnitCounterID + 1
+			spgg.noMistCountUnit = spgg.noMistCountUnit + 1
 
 			if (spgg.useMIST == true) and (mist ~= nil) then
 				_unitId = mist.getNextGroupId()
@@ -2741,7 +2900,7 @@ if (spgg ~= nil) and (spgg.blueseagroups ~= nil) then
 					if (spgg.useMIST == true) and (mist ~= nil) then
 						newUnitName = "BlueAiSeaUnit".. _unitId
 					else
-						newUnitName = "BlueAiSeaUnitNM".. _noMistUnitCounterID
+						newUnitName = "BlueAiSeaUnitNM".. spgg.noMistCountUnit
 						--env.info("-- Red Unit Name:  " .. newUnitName)
 					end -- of if (spgg.useMIST == true) and (mist ~= nil) then
 					
@@ -2829,7 +2988,7 @@ if (spgg ~= nil) and (spgg.redseagroups ~= nil) then
 		local _unitId = 0
 		local _groupId = 0
 			
-		_noMistGroupCounterID = _noMistGroupCounterID + 1 
+		spgg.noMistCountGrp = spgg.noMistCountGrp + 1 
 
 		if (spgg.useMIST == true) and (mist ~= nil) then
 			_groupId = mist.getNextGroupId()
@@ -2851,7 +3010,7 @@ if (spgg ~= nil) and (spgg.redseagroups ~= nil) then
 					if (spgg.useMIST == true) and (mist ~= nil) then
 						_loadGrpName = "RedAiSeaGroup".. _groupId
 					else
-						_loadGrpName = "RedAiSeaGroupNM".. _noMistGroupCounterID
+						_loadGrpName = "RedAiSeaGroupNM".. spgg.noMistCountGrp
 					end -- of if (spgg.useMIST == true) and (mist ~= nil) then
 					
 		end -- of if (spgg.ReuseUnitNames == true) then
@@ -2898,11 +3057,50 @@ if (spgg ~= nil) and (spgg.redseagroups ~= nil) then
 			end
 		end
 		
+		
+		
+			if (spgg.spawnGroupsAsSavedLateActivatedState == true) then
+				
+				if (spgg.redseagroups[spwnGpIdx].lateActivation ~= nil) then 
 					
+					local _lateActivation = spgg.redseagroups[spwnGpIdx].lateActivation
+					
+					if (_lateActivation == 1) then
+						_data["lateActivation"] = true
+						
+						if (spgg.spawnVisibleInactive == true) then
+							_data["visible"] = true
+						end
+						
+					else
+						
+						_data["lateActivation"] = false
+					end -- if (_lateActivation == 1) then
+					
+				end -- of if (spgg.redseagroups[spwnGpIdx].lateActivation ~= nil) then
+				
+			end -- if (spgg.spawnGroupsAsSavedLateActivatedState == true) then
+			
+			
+			
+			-- Overrides spgg.spawnGroupsAsSavedLateActivatedState
+			if (spgg.spawnAllGroupsAsInactive == true) then
+				
+				_data["lateActivation"] = true
+				
+				if (spgg.spawnVisibleInactive == true) then
+					_data["visible"] = true
+				end
+				
+			end
+
+		
+		
+		
 		for spwnUnitIdx = 1, #spgg.redseagroups[spwnGpIdx].units do
                        
 
-			_noMistUnitCounterID = _noMistUnitCounterID + 1
+			spgg.noMistCountUnit = spgg.noMistCountUnit + 1
 
 			if (spgg.useMIST == true) and (mist ~= nil) then
 				_unitId = mist.getNextGroupId()
@@ -2968,7 +3166,7 @@ if (spgg ~= nil) and (spgg.redseagroups ~= nil) then
 					if (spgg.useMIST == true) and (mist ~= nil) then
 						newUnitName = "RedAiSeaUnit".. _unitId
 					else
-						newUnitName = "RedAiSeaUnitNM".. _noMistUnitCounterID
+						newUnitName = "RedAiSeaUnitNM".. spgg.noMistCountUnit
 						--env.info("-- Red Unit Name:  " .. newUnitName)
 					end -- of if (spgg.useMIST == true) and (mist ~= nil) then
 					
@@ -3056,7 +3254,7 @@ if (spgg ~= nil) and (spgg.neutralseagroups ~= nil) then
 		local _unitId = 0
 		local _groupId = 0
 			
-		_noMistGroupCounterID = _noMistGroupCounterID + 1 
+		spgg.noMistCountGrp = spgg.noMistCountGrp + 1 
 
 		if (spgg.useMIST == true) and (mist ~= nil) then
 			_groupId = mist.getNextGroupId()
@@ -3078,7 +3276,7 @@ if (spgg ~= nil) and (spgg.neutralseagroups ~= nil) then
 					if (spgg.useMIST == true) and (mist ~= nil) then
 						_loadGrpName = "NeutralAiSeaGroup".. _groupId
 					else
-						_loadGrpName = "NeutralAiSeaGroupNM".. _noMistGroupCounterID
+						_loadGrpName = "NeutralAiSeaGroupNM".. spgg.noMistCountGrp
 					end -- of if (spgg.useMIST == true) and (mist ~= nil) then
 					
 		end -- of if (spgg.ReuseUnitNames == true) then
@@ -3125,11 +3323,47 @@ if (spgg ~= nil) and (spgg.neutralseagroups ~= nil) then
 			end
 		end
 		
+		
+		if (spgg.spawnGroupsAsSavedLateActivatedState == true) then
+				
+				if (spgg.neutralseagroups[spwnGpIdx].lateActivation ~= nil) then 
+					
+					local _lateActivation = spgg.neutralseagroups[spwnGpIdx].lateActivation
+					
+					if (_lateActivation == 1) then
+						_data["lateActivation"] = true
+						
+						if (spgg.spawnVisibleInactive == true) then
+							_data["visible"] = true
+						end
+						
+					else
+						
+						_data["lateActivation"] = false
+					end -- if (_lateActivation == 1) then
+					
+				end -- of if (spgg.neutralseagroups[spwnGpIdx].lateActivation ~= nil) then
+				
+			end -- if (spgg.spawnGroupsAsSavedLateActivatedState == true) then
+			
+			
+			
+			-- Overrides spgg.spawnGroupsAsSavedLateActivatedState
+			if (spgg.spawnAllGroupsAsInactive == true) then
+				
+				_data["lateActivation"] = true
+				
+				if (spgg.spawnVisibleInactive == true) then
+					_data["visible"] = true
+				end
+				
+			end
+		
 					
 		for spwnUnitIdx = 1, #spgg.neutralseagroups[spwnGpIdx].units do
                        
 
-			_noMistUnitCounterID = _noMistUnitCounterID + 1
+			spgg.noMistCountUnit = spgg.noMistCountUnit + 1
 
 			if (spgg.useMIST == true) and (mist ~= nil) then
 				_unitId = mist.getNextGroupId()
@@ -3195,7 +3429,7 @@ if (spgg ~= nil) and (spgg.neutralseagroups ~= nil) then
 					if (spgg.useMIST == true) and (mist ~= nil) then
 						newUnitName = "NeutralAiSeaUnit".. _unitId
 					else
-						newUnitName = "NeutralAiSeaUnitNM".. _noMistUnitCounterID
+						newUnitName = "NeutralAiSeaUnitNM".. spgg.noMistCountUnit
 						--env.info("-- Neutral Unit Name:  " .. newUnitName)
 					end -- of if (spgg.useMIST == true) and (mist ~= nil) then
 					
@@ -4188,6 +4422,7 @@ function getGroupAndSave(coalitionId, gpName, gpUnitSize)
 		local _grpId = _gp:getID()
 		
 		local _writeStringTbl
+		local _writeStringGrpEnd
 		local _writeStringGrp
 		local _writeStringUnt
 		local _gCount
@@ -4219,9 +4454,17 @@ function getGroupAndSave(coalitionId, gpName, gpUnitSize)
 		end -- if coalitionId == 2 then
 		
 		
+		if (Group.getByName(gpName):getUnit(1):isActive() == true) then
+			_writeStringGrpEnd = '", ["lateActivation"] = 0, ["units"] = {} }\n'
+		elseif (Group.getByName(gpName):getUnit(1):isActive() == false) then
+			_writeStringGrpEnd = '", ["lateActivation"] = 1, ["units"] = {} }\n'
+		else
+			_writeStringGrpEnd = '", ["lateActivation"] = 0, ["units"] = {} }\n'
+		end
+		
 
-		_writeStringGrp = _writeStringTbl.. '['.._gCount..'] = { ["groupname"] = "' ..gpName.. '", ["groupid"] = "' .._grpId.. '" ,["units"] = {} }'
-		wFile:write(_writeStringGrp .. '\n')
+		_writeStringGrp = _writeStringTbl.. '['.._gCount..'] = { ["groupname"] = "' ..gpName.. '", ["groupid"] = "' .._grpId.. _writeStringGrpEnd
+		wFile:write(_writeStringGrp)
 		
 		--Backup
 		if (spgg.enableBackupSaves == true) then
@@ -4288,6 +4531,7 @@ function getGroupAndSave(coalitionId, gpName, gpUnitSize)
 		
 			end
 			
+			
 		
 			_writeStringUnt = _writeStringTbl.. '['.._gCount..'].units['..uIndex..'] = { ["type"] = "' .. _unitType .. '", ["name"] = "' .. _unitName .. '", ["unitid"] = "' .._unitId.. '", ["skill"] = "Excellent", ["x"] = ' .. _unitCoord.x .. ', ["y"] = ' .. _unitCoord.z .. ', ["heading"] = ' .. _unitHdg .. ', ["playerCanDrive"] = true, ["country"]= '.. _country ..', }'
 			wFile:write(_writeStringUnt .. '\n')
@@ -4326,7 +4570,7 @@ function getSeaGroupAndSave(coalitionId, gpName, gpUnitSize)
 	
 		local _gp = Group.getByName(gpName)
 		local _grpId = _gp:getID()
-	
+		local _writeStringGrpEnd
 		local _writeStringTbl
 		local _writeStringGrp
 		local _writeStringUnt
@@ -4361,8 +4605,19 @@ function getSeaGroupAndSave(coalitionId, gpName, gpUnitSize)
 		
 		end
 
-		_writeStringGrp = _writeStringTbl.. '['.._gCount..'] = { ["groupname"] = "' ..gpName.. '", ["groupid"] = "' .._grpId.. '" ,["units"] = {} }'
-		wFile:write(_writeStringGrp .. '\n')
+
+		
+		if (Group.getByName(gpName):getUnit(1):isActive() == true) then
+			_writeStringGrpEnd = '", ["lateActivation"] = 0, ["units"] = {} }\n'
+		elseif (Group.getByName(gpName):getUnit(1):isActive() == false) then
+			_writeStringGrpEnd = '", ["lateActivation"] = 1, ["units"] = {} }\n'
+		else
+			_writeStringGrpEnd = '", ["lateActivation"] = 0, ["units"] = {} }\n'
+		end
+		
+
+		_writeStringGrp = _writeStringTbl.. '['.._gCount..'] = { ["groupname"] = "' ..gpName.. '", ["groupid"] = "' .._grpId.. _writeStringGrpEnd
+		wFile:write(_writeStringGrp)
 		
 		--Backup
 		if (spgg.enableBackupSaves == true) then
@@ -4714,10 +4969,10 @@ function spgg.clearSavefile()
 	spgg.loopSaveActive = "0"
 	
 	
-	env.info('-- SPGG : clear savefile : Reset file -' .. spgg.defaultDrive .. spgg.saveFilename)
+	env.info('-- SPGG : clear savefile : Reset file -' .. spgg.loadDir .. spgg.saveFilename)
 
 	-- Reset SPGG Persistent save file
-	spgg.clearwFile = io.open(spgg.defaultDrive .. spgg.saveFilename, 'w')
+	spgg.clearwFile = io.open(spgg.loadDir .. spgg.saveFilename, 'w')
 
 
 	spgg.clearwFile:write('')
