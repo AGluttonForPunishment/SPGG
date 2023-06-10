@@ -20,6 +20,13 @@ Save Ground and Naval groups in DCS and load them after restart or next time you
 <br>
 <br>
 
+Update v024 :
+-   Added various LateActivated options for save and spawn.
+
+<br>
+<br>
+<br>
+
 Update v023 - Hotfix 1:
 - Fixed: SPGG.lua"]:3492: attempt to index field 'wFile' (a nil value)
 
