@@ -1,7 +1,7 @@
 -- Simple Persistent Ground Groups (SPGG)
 -- By A Glutton For Punishment (aka Kanelbolle)
 
-env.info('-- SPGG v024 : Loading!')
+env.info('-- SPGG v026 : Loading!')
 spgg = spgg or {} -- do not remove
 
 -- todo: Add livery defaults for units!
@@ -100,6 +100,8 @@ spgg.spawnAllGroupsAsInactive = false
 -- If "true", all units spawn as visible when "Late Activated" is on (Only active if spgg.spawnAllGroupsAsInactive or spgg.spawnGroupsAsSavedLateActivatedState is true)
 spgg.spawnVisibleInactive = false
 
+-- Set "true" if you want to save CTLD crates that are on the spaned in to the world. Will spawn with static objects spawning commands.
+spgg.saveCtldCrates = false
 
 -- Don't show Message box in DCS. Use logg file insted. (spgg.showEnvinfo)
 env.setErrorMessageBoxEnabled(false)
@@ -586,7 +588,21 @@ end -- of if (spgg.initalstart ~= nil) then
 
 
 
+if (spgg.saveCtldCrates == true) then
 
+	if (ctld ~= nil) then
+	
+		if ctld.slingLoad then
+           table.insert(spgg.includeStaticObjectTypeTbl, ctld.spawnableCratesModel_sling.type)
+		   env.info('-- SPGG : spgg.saveCtldCrates = true : Type: ' .. ctld.spawnableCratesModel_sling.type)
+        else
+           table.insert(spgg.includeStaticObjectTypeTbl, ctld.spawnableCratesModel_load.type)
+		   env.info('-- SPGG : spgg.saveCtldCrates = true : Type: ' .. ctld.spawnableCratesModel_load.type)
+        end
+				
+	end
+
+end
 
 
 
@@ -2053,7 +2069,7 @@ end -- of function spgg.spawnNeutralGroundGroup()
 function spgg.spawnBlueStaticObject()
 
 
-	--local _coaId = 2
+	local _coaId = 2
 	
 	
 		
@@ -2091,6 +2107,7 @@ function spgg.spawnBlueStaticObject()
 			local _soCoordY		= spgg.bluestaticobj[spwnSoIdx].obj[1].y or 0
 			local _soHdg		= spgg.bluestaticobj[spwnSoIdx].obj[1].heading or 0
 			local _uCountry		= spgg.bluestaticobj[spwnSoIdx].obj[1].country or 80
+			local _uWeight		= spgg.bluestaticobj[spwnSoIdx].obj[1].mass or 0
 	
 	
 	
@@ -2103,6 +2120,7 @@ function spgg.spawnBlueStaticObject()
 				["x"] = _soCoordX,
 				["canCargo"] = false,
 				["heading"] = _soHdg,
+				["mass"] = _uWeight,
 				--["groupId"] = _groupId,
 				
 			}
@@ -2115,6 +2133,9 @@ function spgg.spawnBlueStaticObject()
 				
 		
 			end
+			
+			
+				
 			
 			if (spgg.ReuseID == true) and (spgg.bluestaticobj[spwnSoIdx].obj[1].unitid ~= nil) then 
 		
@@ -2149,6 +2170,58 @@ function spgg.spawnBlueStaticObject()
 			--_data.units[1]["type"] = _soType
 			--_data.units[1]["heading"] = _soHdg
 			--_data.units[1]["category"] = _soCategory
+			
+			
+			if (ctld ~= nil) then
+			
+				if spgg.saveCtldCrates == true then
+			
+					if (ctld.slingLoad == true) and (ctld.enableCrates == true) then
+						
+						_data["canCargo"] = true
+						
+						if (_soType == ctld.spawnableCratesModel_sling.type) then
+							env.error('ctld.spawnableCratesModel_sling.type : ' .. ctld.spawnableCratesModel_sling.shape_name)
+							_data["shape_name"] = ctld.spawnableCratesModel_sling.shape_name
+							
+							local _crateType = ctld.crateLookupTable[tostring(_uWeight)]
+							-- local _coaId = 2
+							if _coaId == 1 then
+								ctld.spawnedCratesRED[_soNewName] = {}
+								ctld.spawnedCratesRED[_soNewName] =_crateType
+								 env.info('-- Readded : ' .._soNewName.. ' - to  ctld.spawnedCratesRED!')
+							else
+								ctld.spawnedCratesBLUE[_soNewName] = {}
+								ctld.spawnedCratesBLUE[_soNewName] = _crateType
+								env.info('-- Readded : ' .._soNewName.. ' - to  ctld.spawnedCratesBLUE!')
+							end
+							
+						end
+						
+					elseif (ctld.slingLoad == false) and (ctld.enableCrates == true) then
+					
+						if (_soType == ctld.spawnableCratesModel_load.type) then
+							env.error('ctld.spawnableCratesModel_load.type : ' .. ctld.spawnableCratesModel_load.shape_name)
+							_data["shape_name"] = ctld.spawnableCratesModel_load.shape_name
+							
+							local _crateType = ctld.crateLookupTable[tostring(_uWeight)]
+							-- local _coaId = 2
+							if _coaId == 1 then
+								ctld.spawnedCratesRED[_soNewName] = {}
+								ctld.spawnedCratesRED[_soNewName] =_crateType
+								 env.info('-- Readded : ' .._soNewName.. ' - to  ctld.spawnedCratesRED!')
+							else
+								ctld.spawnedCratesBLUE[_soNewName] = {}
+								ctld.spawnedCratesBLUE[_soNewName] = _crateType
+								env.info('-- Readded : ' .._soNewName.. ' - to  ctld.spawnedCratesBLUE!')
+							end
+							
+						end
+					end
+			
+				end -- of if spgg.saveCtldCrates == true then
+				
+			end -- of if (ctld ~= nil) then
 			
 			
 			coalition.addStaticObject(_uCountry, _data)	
@@ -2268,7 +2341,7 @@ end -- of function spgg.spawnBlueStaticObject()
 function spgg.spawnRedStaticObject()
 
 
-	--local _coaId = 2
+	local _coaId = 1
 	
 	
 		
@@ -2306,7 +2379,7 @@ function spgg.spawnRedStaticObject()
 			local _soCoordY		= spgg.redstaticobj[spwnSoIdx].obj[1].y or 0
 			local _soHdg		= spgg.redstaticobj[spwnSoIdx].obj[1].heading or 0
 			local _uCountry		= spgg.redstaticobj[spwnSoIdx].obj[1].country or 81
-	
+			local _uWeight		= spgg.redstaticobj[spwnSoIdx].obj[1].mass or 0
 	
 	
 			local _data = {
@@ -2329,6 +2402,12 @@ function spgg.spawnRedStaticObject()
 				--_data.units[1]["unitId"] = _unitId
 				
 		
+			end
+			
+			if (ctld ~= nil) then
+				if ctld.slingLoad then
+					_data["canCargo"] = true
+				end
 			end
 			
 			if (spgg.ReuseID == true) and (spgg.redstaticobj[spwnSoIdx].obj[1].unitid ~= nil) then 
@@ -2368,6 +2447,58 @@ function spgg.spawnRedStaticObject()
 			
 			coalition.addStaticObject(_uCountry, _data)	
 			--mist.dynAddStatic(_data)
+		
+		
+			if (ctld ~= nil) then
+			
+				if spgg.saveCtldCrates == true then
+			
+					if (ctld.slingLoad == true) and (ctld.enableCrates == true) then
+						
+						_data["canCargo"] = true
+						
+						if (_soType == ctld.spawnableCratesModel_sling.type) then
+							env.error('ctld.spawnableCratesModel_sling.type : ' .. ctld.spawnableCratesModel_sling.shape_name)
+							_data["shape_name"] = ctld.spawnableCratesModel_sling.shape_name
+							
+							local _crateType = ctld.crateLookupTable[tostring(_uWeight)]
+							-- local _coaId = 2
+							if _coaId == 1 then
+								ctld.spawnedCratesRED[_soNewName] = {}
+								ctld.spawnedCratesRED[_soNewName] =_crateType
+								env.info('-- Readded : ' .._soNewName.. ' - to  ctld.spawnedCratesRED!')
+							else
+								ctld.spawnedCratesBLUE[_soNewName] = {}
+								ctld.spawnedCratesBLUE[_soNewName] = _crateType
+								env.info('-- Readded : ' .._soNewName.. ' - to  ctld.spawnedCratesBLUE!')
+							end
+							
+						end
+						
+					elseif (ctld.slingLoad == false) and (ctld.enableCrates == true) then
+					
+						if (_soType == ctld.spawnableCratesModel_load.type) then
+							env.error('ctld.spawnableCratesModel_load.type : ' .. ctld.spawnableCratesModel_load.shape_name)
+							_data["shape_name"] = ctld.spawnableCratesModel_load.shape_name
+							
+							local _crateType = ctld.crateLookupTable[tostring(_uWeight)]
+							-- local _coaId = 2
+							if _coaId == 1 then
+								ctld.spawnedCratesRED[_soNewName] = {}
+								ctld.spawnedCratesRED[_soNewName] =_crateType
+								 env.info('-- Readded : ' .._soNewName.. ' - to  ctld.spawnedCratesRED!')
+							else
+								ctld.spawnedCratesBLUE[_soNewName] = {}
+								ctld.spawnedCratesBLUE[_soNewName] = _crateType
+								env.info('-- Readded : ' .._soNewName.. ' - to  ctld.spawnedCratesBLUE!')
+							end
+							
+						end
+					end
+			
+				end -- of if spgg.saveCtldCrates == true then
+				
+			end -- of if (ctld ~= nil) then
 		
 			if (spgg.showEnvinfo == true) then
 				env.info("-- SPGG :  Load Red Static Object type : " .. _soType .. " - Category: " .. _soCategory .. " - Index : " .. spwnSoIdx .. " - GroupID : " .. _groupId .. " - unitID : " .. _unitId .. " - New Name : " .. _soNewName)
@@ -2484,7 +2615,7 @@ end -- of function spgg.spawnRedStaticObject()
 function spgg.spawnNeutralStaticObject()
 
 
-	--local _coaId = 2
+	local _coaId = 0
 	
 	
 		
@@ -2522,7 +2653,7 @@ function spgg.spawnNeutralStaticObject()
 			local _soCoordY		= spgg.neutralstaticobj[spwnSoIdx].obj[1].y or 0
 			local _soHdg		= spgg.neutralstaticobj[spwnSoIdx].obj[1].heading or 0
 			local _uCountry		= spgg.neutralstaticobj[spwnSoIdx].obj[1].country or 81
-	
+			local _uWeight		= spgg.neutralstaticobj[spwnSoIdx].obj[1].mass or 0
 	
 	
 			local _data = {
@@ -2584,6 +2715,10 @@ function spgg.spawnNeutralStaticObject()
 			
 			coalition.addStaticObject(_uCountry, _data)	
 			--mist.dynAddStatic(_data)
+		
+	
+		
+		
 		
 			if (spgg.showEnvinfo == true) then
 				env.info("-- SPGG :  Load Neutral Static Object type : " .. _soType .. " - Category: " .. _soCategory .. " - Index : " .. spwnSoIdx .. " - GroupID : " .. _groupId .. " - unitID : " .. _unitId .. " - New Name : " .. _soNewName)
@@ -3635,6 +3770,30 @@ end
 
 
 
+function spgg.loadCtldCrates()
+
+	env.info('-- SPGG : Running spgg.loadCtldCrates')
+
+
+	if (spgg.spawnedCratesBLUE ~= nil)  then
+		ctld.spawnedCratesBLUE = spgg.spawnedCratesBLUE
+	end
+	
+	if (spgg.spawnedCratesRED ~= nil)  then
+		ctld.spawnedCratesRED = spgg.spawnedCratesRED
+	end
+
+	if (spgg.droppedFOBCratesBLUE ~= nil)  then
+		ctld.droppedFOBCratesBLUE = spgg.droppedFOBCratesBLUE
+	end
+	
+	if (spgg.droppedFOBCratesRED ~= nil)  then
+		ctld.droppedFOBCratesRED = spgg.droppedFOBCratesRED
+	end
+
+
+
+end
 
 
 
@@ -4326,6 +4485,8 @@ function getObjectAndSave(coalitionId, soName)
 		
 		local _soCategory =  _soDataTable.category
 		
+		local _soWeight =  StaticObject.getCargoWeight(_sObject)
+		
 		--env.info('-- SPGG :  Type: ' .. _soType .. ' - Category: ' .. _soDataTable.category)
 		
 		local _soCoord = _sObject:getPoint()
@@ -4354,7 +4515,7 @@ function getObjectAndSave(coalitionId, soName)
 			--wFile:write('spgg.redstaticobj['..spgg.soRedCount..'].obj[1] = { ["type"] = "' .. _soType .. '", ["category"] = "' .. _soCategory .. '", ["name"] = "' .. soName .. '", ["unitid"] = "' .._sObjectId.. '" , ["x"] = ' .. _soCoord.x .. ', ["y"] = ' .. _soCoord.z .. ', ["heading"] = ' .. _soHdg .. ', ["country"]= '.. _country ..', }' .. '\n')
 		
 			if (spgg.showEnvinfo == true) then
-				env.info('-- SPGG :  Saving Red Object: '.. _unitName .. ' - Type: ' .. _unitType .. ' - Coordinates X: ' .. _unitCoord.x .. ' - Y: ' .. _unitCoord.y .. ' - Z: ' .. _unitCoord.z .. ' - Heading: ' .. _unitHdg .. ' - Country: '.. _country .. ' - UnitId: ' .. _sObjectId)
+				env.info('-- SPGG :  Saving Red Object: '.. _unitName .. ' - Type: ' .. _unitType .. ' - Coordinates X: ' .. _unitCoord.x .. ' - Y: ' .. _unitCoord.y .. ' - Z: ' .. _unitCoord.z .. ' - Heading: ' .. _unitHdg .. ' - Country: '.. _country .. ' - UnitId: ' .. _sObjectId .. " - Weight: " .. _soWeight)
 			end
 		
 			
@@ -4371,7 +4532,7 @@ function getObjectAndSave(coalitionId, soName)
 			--wFile:write('spgg.bluestaticobj['..spgg.soBlueCount..'].obj[1] = { ["type"] = "' .. _soType .. '", ["category"] = "' .. _soCategory .. '", ["name"] = "' .. soName .. '", ["unitid"] = "' .._sObjectId.. '" , ["x"] = ' .. _soCoord.x .. ', ["y"] = ' .. _soCoord.z .. ', ["heading"] = ' .. _soHdg .. ', ["country"]= '.. _country ..', }' .. '\n')
 
 			if (spgg.showEnvinfo == true) then
-				env.info('-- SPGG :  Saving Blue Object: '.. _unitName .. ' - Type: ' .. _unitType .. ' - Coordinates X: ' .. _unitCoord.x .. ' - Y: ' .. _unitCoord.y .. ' - Z: ' .. _unitCoord.z .. ' - Heading: ' .. _unitHdg .. ' - Country: '.. _country .. ' - UnitId: ' .. _sObjectId)
+				env.info('-- SPGG :  Saving Blue Object: '.. _unitName .. ' - Type: ' .. _unitType .. ' - Coordinates X: ' .. _unitCoord.x .. ' - Y: ' .. _unitCoord.y .. ' - Z: ' .. _unitCoord.z .. ' - Heading: ' .. _unitHdg .. ' - Country: '.. _country .. ' - UnitId: ' .. _sObjectId .. " - Weight: " .. _soWeight)
 			end
 
 
@@ -4389,7 +4550,7 @@ function getObjectAndSave(coalitionId, soName)
 		end
 	
 		_writeStringGrp = _writeStringTbl.. '['.._gCount..'] = { ["obj"] = {} }'
-		_writeStringObj = _writeStringTbl.. '['.._gCount..'].obj[1] = { ["type"] = "' .. _soType .. '", ["category"] = "' .. _soCategory .. '", ["name"] = "' .. soName .. '", ["unitid"] = "' .._sObjectId.. '" , ["x"] = ' .. _soCoord.x .. ', ["y"] = ' .. _soCoord.z .. ', ["heading"] = ' .. _soHdg .. ', ["country"]= '.. _country ..', }'
+		_writeStringObj = _writeStringTbl.. '['.._gCount..'].obj[1] = { ["type"] = "' .. _soType .. '", ["category"] = "' .. _soCategory .. '", ["name"] = "' .. soName .. '", ["unitid"] = "' .._sObjectId.. '" , ["x"] = ' .. _soCoord.x .. ', ["y"] = ' .. _soCoord.z .. ', ["heading"] = ' .. _soHdg .. ', ["country"]= '.. _country .. ', ["mass"]= '.. _soWeight ..', }'
 		
 		wFile:write(_writeStringGrp .. '\n')
 		wFile:write(_writeStringObj .. '\n')
@@ -4865,8 +5026,90 @@ function saveCtldTables()
 			
 		end -- end of: if (ctld.enabledFOBBuilding == true) then
 
-	
-	
+		
+		-- Save CTLD Crates tables
+		if (spgg.saveCtldCrates == true) then
+		
+			
+			-- _writeStringGrp = _writeStringTbl.. '['.._gCount..'] = { ["obj"] = {} }'
+			-- _writeStringObj = _writeStringTbl.. '['.._gCount..'].obj[1] = { ["type"] = "' .. _soType .. '", ["category"] = "' .. _soCategory .. '", ["name"] = "' .. soName .. '", ["unitid"] = "' .._sObjectId.. '" , ["x"] = ' .. _soCoord.x .. ', ["y"] = ' .. _soCoord.z .. ', ["heading"] = ' .. _soHdg .. ', ["country"]= '.. _country .. ', ["mass"]= '.. _soWeight ..', }'
+		
+			-- wFile:write(_writeStringGrp .. '\n')
+			-- wFile:write(_writeStringObj .. '\n')
+			-- wFile:write('spgg.spawnedCratesBLUE = spgg.spawnedCratesBLUE or {}' .. '\n')
+				
+				
+			-- if (spgg.enableBackupSaves == true) then
+					-- wBackupFile:write('spgg.spawnedCratesBLUE = spgg.spawnedCratesBLUE or {}' .. '\n')
+			-- end
+			local _crates = ctld.spawnedCratesBLUE
+			local _writeStringTbl = 'spgg.spawnedCratesBLUE'
+			wFile:write(_writeStringTbl .. " = " .. _writeStringTbl .. ' or {}' .. '\n')
+			
+			for _crateName, _details in pairs(_crates) do
+				
+				wFile:write(_writeStringTbl .. '["'.._crateName..'"] = ' .. spgg.dumpTbl(_details) .. '\n')
+				-- env.info('Name: ' .. _crateName)
+				-- -- env.info('Details: ' .. _details["mass
+				-- env.info('Details: ' .. spgg.dumpTbl(_details))
+	 
+			end
+			_crates = ctld.spawnedCratesRED
+			_writeStringTbl = 'spgg.spawnedCratesRED'
+			wFile:write(_writeStringTbl .. " = " .. _writeStringTbl .. ' or {}' .. '\n')
+			
+			for _crateName, _details in pairs(_crates) do
+				
+				wFile:write(_writeStringTbl .. '["'.._crateName..'"] = ' .. spgg.dumpTbl(_details) .. '\n')
+				-- env.info('Name: ' .. _crateName)
+				-- -- env.info('Details: ' .. _details["mass
+				-- env.info('Details: ' .. spgg.dumpTbl(_details))
+	 
+			end
+			
+			_crates = ctld.droppedFOBCratesBLUE
+			_writeStringTbl = 'spgg.droppedFOBCratesBLUE'
+			wFile:write(_writeStringTbl .. " = " .. _writeStringTbl .. ' or {}' .. '\n')
+			
+			for _crateName, _details in pairs(_crates) do
+				
+				wFile:write(_writeStringTbl .. '["'.._crateName..'"] = ' .. spgg.dumpTbl(_details) .. '\n')
+				-- env.info('Name: ' .. _crateName)
+				-- -- env.info('Details: ' .. _details["mass
+				-- env.info('Details: ' .. spgg.dumpTbl(_details))
+	 
+			end
+			
+			_crates = ctld.droppedFOBCratesRED
+			_writeStringTbl = 'spgg.droppedFOBCratesRED'
+			wFile:write(_writeStringTbl .. " = " .. _writeStringTbl .. ' or {}' .. '\n')
+			
+			for _crateName, _details in pairs(_crates) do
+				
+				wFile:write(_writeStringTbl .. '["'.._crateName..'"] = ' .. spgg.dumpTbl(_details) .. '\n')
+				-- env.info('Name: ' .. _crateName)
+				-- -- env.info('Details: ' .. _details["mass
+				-- env.info('Details: ' .. spgg.dumpTbl(_details))
+	 
+			end
+			
+			
+			
+			
+			-- for i = 1, #ctld.spawnedCratesBLUE do
+		
+					-- wFile:write('spgg.spawnedCratesBLUE['..i..'] = { ["name"] = "' .. ctld.spawnedCratesBLUE[i]..'" }' .. '\n')
+				
+					-- --backup
+					-- if (spgg.enableBackupSaves == true) then
+						-- wBackupFile:write('spgg.spawnedCratesBLUE['..i..'] = { ["name"] = "' .. ctld.spawnedCratesBLUE[i]..'" }' .. '\n')
+					-- end -- if (spgg.enableBackupSaves == true) then
+					
+			-- end -- end of: for i = 1, #ctld.logisticUnits do
+			
+			-- ctld.spawnedCratesRED[_name] =_crateType
+			-- ctld.spawnedCratesBLUE[_name] = _crateType
+		end
 
 	end -- end of if (ctld ~= nil) then
 
@@ -4987,7 +5230,18 @@ function spgg.clearSavefile()
 end
 
 
-
+function spgg.dumpTbl(o)
+   if type(o) == 'table' then
+      local s = '{ '
+      for k,v in pairs(o) do
+         if type(k) ~= 'number' then k = '"'..k..'"' end
+         s = s .. '['..k..'] = ' .. '"' ..spgg.dumpTbl(v) .. '"' .. ','
+      end
+      return s .. '} \n'
+   else
+      return tostring(o)
+   end
+end
 
 
 
