@@ -2445,10 +2445,6 @@ function spgg.spawnRedStaticObject()
 			--_data.units[1]["category"] = _soCategory
 			
 			
-			coalition.addStaticObject(_uCountry, _data)	
-			--mist.dynAddStatic(_data)
-		
-		
 			if (ctld ~= nil) then
 			
 				if spgg.saveCtldCrates == true then
@@ -2499,6 +2495,13 @@ function spgg.spawnRedStaticObject()
 				end -- of if spgg.saveCtldCrates == true then
 				
 			end -- of if (ctld ~= nil) then
+			
+			
+			coalition.addStaticObject(_uCountry, _data)	
+			--mist.dynAddStatic(_data)
+		
+		
+			
 		
 			if (spgg.showEnvinfo == true) then
 				env.info("-- SPGG :  Load Red Static Object type : " .. _soType .. " - Category: " .. _soCategory .. " - Index : " .. spwnSoIdx .. " - GroupID : " .. _groupId .. " - unitID : " .. _unitId .. " - New Name : " .. _soNewName)
