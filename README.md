@@ -22,7 +22,7 @@ Save Ground and Naval groups in DCS and load them after restart or next time you
 
 Update v026 :
 
-- Added support for saving CTLD crates.
+- Added support for saving CTLD crates. (Change to spgg.saveCtldCrates = true)
 
 <br>
 <br>
