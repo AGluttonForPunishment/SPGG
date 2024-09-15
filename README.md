@@ -20,6 +20,14 @@ Save Ground and Naval groups in DCS and load them after restart or next time you
 <br>
 <br>
 
+Update v027 :
+-- Changed spawning commands, see Readme SPGG vxxx file or example mission for new commands (Removed 1956 of code)
+-- Fixed tons of errors when using debugging (spgg.showEnvinfo = true)
+
+<br>
+<br>
+<br>
+
 Update v026 :
 
 - Added support for saving CTLD crates. (Change to spgg.saveCtldCrates = true)
