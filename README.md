@@ -20,6 +20,14 @@ Save Ground and Naval groups in DCS and load them after restart or next time you
 <br>
 <br>
 
+Update v026 :
+
+- Added support for saving CTLD crates.
+
+<br>
+<br>
+<br>
+
 Update v025 :
 
 - Fixed subfolder left in default path.
