@@ -1,10 +1,13 @@
 # SPGG
-Simple Persistent Ground Groups
+Simple Persistent Ground Groups for DCS World
 <br>
 <br>
 Save Ground and Naval groups in DCS and load them after restart or next time you play a mission. No repacking of .miz files.
 <br>
 <br>
+
+See releases page complete download with readme and example file:
+https://github.com/AGluttonForPunishment/SPGG/releases
 
 
 
