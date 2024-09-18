@@ -6,7 +6,7 @@ Save Ground and Naval groups in DCS and load them after restart or next time you
 <br>
 <br>
 
-See releases page complete download with readme and example file:
+See releases page for complete download with readme and example file:
 https://github.com/AGluttonForPunishment/SPGG/releases
 
 
