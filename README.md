@@ -2,6 +2,9 @@
 Simple Persistent Ground Groups for DCS World
 <br>
 <br>
+ From the release of the "Mission State Save" functionality in "DCS 2.9.14.8222" this script is no longer maintained. 
+<br>
+<br>
 Save Ground and Naval groups in DCS and load them after restart or next time you play a mission. No repacking of .miz files.
 <br>
 <br>
